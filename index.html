@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>LokiChess v0.8.1</title>
+    <title>LokiChess v0.8.2</title>
     <style>
         :root {
             --sq-white: #f0d9b5;
@@ -190,6 +190,11 @@
             overflow-y: auto; flex: 1; line-height: 1.4;
             font-family: system-ui, -apple-system, sans-serif; font-size: 0.8rem;
         }
+
+        /* Detailed Log Styling */
+        .ai-eval-score { font-weight: bold; color: #00f2fe; }
+        .ai-eval-text { color: #ddd; font-style: italic; margin-top: 2px; }
+        .ai-pv-line { color: #aaa; font-family: monospace; font-size: 0.75rem; margin-top: 4px; word-break: break-all; }
 
         .spinner {
             width: 10px; height: 10px;
@@ -381,7 +386,7 @@
 <div class="header">
     <h1>LokiChess</h1>
     <img src="chess_images/logo1.png" alt="LokiChess Logo" class="header-logo" onerror="this.style.display='none'">
-    <span class="version">v0.8.1</span>
+    <span class="version">v0.8.2</span>
 </div>
 
 <div id="info-box">
@@ -489,6 +494,7 @@
             <div class="setting-item">
                 <label for="difficulty">Difficulty: </label>
                 <select id="difficulty">
+                    <option value="toddler">Toddler (Skill 0)</option>
                     <option value="beginner">Beginner (d1)</option>
                     <option value="easy">Easy (d3)</option>
                     <option value="medium" selected>Medium (d8)</option>
@@ -581,7 +587,7 @@ let draggedPiece = null, dragStartPos = null;
 let musicStarted = false;
 let moveHistory = [];
 let gameStateHistory = [];
-let currentTurnAIHistory = "";
+let currentTurnAIAnalysis = { score: "", desc: "", pv: "" };
 let isAIThinking = false;
 let currentHint = null;
 let isHintRequest = false;
@@ -784,7 +790,6 @@ function playRandomTrack() {
         'chess_music/music5.mp3'
     ];
     
-    // Filter out lastPlayedTrack so the same song never plays twice in a row
     let availableTracks = tracks.filter(t => t !== lastPlayedTrack);
     if (availableTracks.length === 0) availableTracks = tracks;
     
@@ -953,20 +958,49 @@ function initStockfish() {
                 
                 if (line.startsWith('info depth')) {
                     const scoreMatch = line.match(/score cp (-?\d+)/);
-                    if (scoreMatch) {
+                    const mateMatch = line.match(/score mate (-?\d+)/);
+                    const pvMatch = line.match(/ pv (.*)/);
+
+                    let evalScoreStr = "";
+                    let humanEval = "";
+
+                    if (isDrunkAI) {
+                        evalScoreStr = "🍹 Drunk Eval";
+                        humanEval = "AI is dizzy from the drink and plays randomly!";
+                    } else if (mateMatch) {
+                        let m = parseInt(mateMatch[1]);
+                        if (turn === 'b') m = -m;
+                        evalScoreStr = `Mate in ${Math.abs(m)}`;
+                        humanEval = m > 0 ? "White has forced Checkmate!" : "Black has forced Checkmate!";
+                    } else if (scoreMatch) {
                         let cp = parseInt(scoreMatch[1]);
                         if (turn === 'b') cp = -cp;
                         
-                        let humanEval = "Game is evenly balanced.";
-                        if (cp > 200) humanEval = "White has a strong advantage.";
-                        else if (cp > 50) humanEval = "White is slightly better.";
-                        else if (cp < -200) humanEval = "Black has a strong advantage.";
-                        else if (cp < -50) humanEval = "Black is slightly better.";
-                        
-                        if (isDrunkAI) humanEval = "AI is feeling dizzy from the drink... 🍹";
-                        currentTurnAIHistory = humanEval;
-                        if (isAIThinking) updateAILogDisplay();
+                        let pawnVal = (cp / 100).toFixed(2);
+                        evalScoreStr = (cp >= 0 ? "+" : "") + pawnVal;
+
+                        if (cp > 400) humanEval = "White has a decisive winning advantage.";
+                        else if (cp > 150) humanEval = "White has a strong tactical advantage.";
+                        else if (cp > 40) humanEval = "White is slightly better.";
+                        else if (cp < -400) humanEval = "Black has a decisive winning advantage.";
+                        else if (cp < -150) humanEval = "Black has a strong tactical advantage.";
+                        else if (cp < -40) humanEval = "Black is slightly better.";
+                        else humanEval = "Position is evenly balanced.";
                     }
+
+                    let pvLine = "";
+                    if (pvMatch && pvMatch[1]) {
+                        const moves = pvMatch[1].split(' ').slice(0, 4).join(' ');
+                        pvLine = `Best line: ${moves}...`;
+                    }
+
+                    currentTurnAIAnalysis = {
+                        score: evalScoreStr,
+                        desc: humanEval,
+                        pv: pvLine
+                    };
+
+                    if (isAIThinking) updateAILogDisplay();
                 }
                 
                 if (line.startsWith('bestmove')) {
@@ -1010,8 +1044,8 @@ function resetGame() {
     gameStateHistory = [];
     isAIThinking = false;
     currentHint = null;
+    currentTurnAIAnalysis = { score: "", desc: "", pv: "" };
     
-    // Automatically play/shuffle random track if set to shuffle on game start
     if (document.getElementById('music-track').value === 'shuffle') {
         playRandomTrack();
     }
@@ -1080,6 +1114,7 @@ function showHintMove(moveStr) {
     const aiContainer = document.getElementById('ai-log-content');
     const p = document.createElement('div');
     p.style.color = '#ffeb3b';
+    p.style.marginTop = '6px';
     p.textContent = `💡 Hint: Move ${pName} to ${dest}`;
     aiContainer.appendChild(p);
     aiContainer.scrollTop = aiContainer.scrollHeight;
@@ -1121,9 +1156,23 @@ function updateScoreDisplay() {
 function updateAILogDisplay() {
     const aiContainer = document.getElementById('ai-log-content');
     if (isAIThinking) {
-        aiContainer.innerHTML = `<span class="spinner"></span> Thinking... ${currentTurnAIHistory}`;
+        aiContainer.innerHTML = `
+            <div><span class="spinner"></span> Analyzing position...</div>
+            ${currentTurnAIAnalysis.score ? `<div class="ai-eval-score">Eval: ${currentTurnAIAnalysis.score}</div>` : ''}
+            ${currentTurnAIAnalysis.desc ? `<div class="ai-eval-text">${currentTurnAIAnalysis.desc}</div>` : ''}
+            ${currentTurnAIAnalysis.pv ? `<div class="ai-pv-line">${currentTurnAIAnalysis.pv}</div>` : ''}
+        `;
     } else {
-        aiContainer.innerHTML = currentTurnAIHistory ? `Done. (${currentTurnAIHistory})` : "Idle.";
+        if (currentTurnAIAnalysis.score) {
+            aiContainer.innerHTML = `
+                <div><strong>Analysis Complete:</strong></div>
+                <div class="ai-eval-score">Eval: ${currentTurnAIAnalysis.score}</div>
+                <div class="ai-eval-text">${currentTurnAIAnalysis.desc}</div>
+                ${currentTurnAIAnalysis.pv ? `<div class="ai-pv-line">${currentTurnAIAnalysis.pv}</div>` : ''}
+            `;
+        } else {
+            aiContainer.innerHTML = "Idle.";
+        }
     }
 }
 
@@ -1131,10 +1180,12 @@ function appendAIFinalMove(moveStr) {
     const aiContainer = document.getElementById('ai-log-content');
     const moveNum = Math.floor(moveHistory.length / 2) + 1;
     const p = document.createElement('div');
+    p.style.marginTop = '6px';
+    p.style.borderTop = '1px solid #45423e';
+    p.style.paddingTop = '4px';
     p.textContent = `[Move ${moveNum}] AI played ${moveStr}.`;
     aiContainer.appendChild(p);
     aiContainer.scrollTop = aiContainer.scrollHeight;
-    updateAILogDisplay();
 }
 
 function updateMoveLog(moveNotation) {
@@ -1570,22 +1621,24 @@ function triggerAIMove() {
     if (aiReady && stockfish) {
         const fen = boardToFEN();
         
-        let depth = 8, movetime = 1000;
+        let depth = 8, movetime = 1000, skillLevel = 20;
         if (isDrunkAI) {
-            depth = 1; movetime = 200;
+            depth = 1; movetime = 200; skillLevel = 0;
             isDrunkAI = false;
         } else {
             const diff = document.getElementById('difficulty').value;
-            if (diff === 'beginner') { depth = 1; movetime = 150; }
-            else if (diff === 'easy') { depth = 3; movetime = 400; }
-            else if (diff === 'medium') { depth = 8; movetime = 1000; }
-            else if (diff === 'hard') { depth = 12; movetime = 2000; }
-            else if (diff === 'master') { depth = 18; movetime = 3000; }
+            if (diff === 'toddler') { depth = 1; movetime = 100; skillLevel = 0; }
+            else if (diff === 'beginner') { depth = 1; movetime = 150; skillLevel = 3; }
+            else if (diff === 'easy') { depth = 3; movetime = 400; skillLevel = 7; }
+            else if (diff === 'medium') { depth = 8; movetime = 1000; skillLevel = 20; }
+            else if (diff === 'hard') { depth = 12; movetime = 2000; skillLevel = 20; }
+            else if (diff === 'master') { depth = 18; movetime = 3000; skillLevel = 20; }
         }
 
         isAIThinking = true;
         updateAILogDisplay();
 
+        stockfish.postMessage("setoption name Skill Level value " + skillLevel);
         stockfish.postMessage("position fen " + fen);
         stockfish.postMessage(`go depth ${depth} movetime ${movetime}`);
     } else setTimeout(makeFallbackAIMove, 500);
