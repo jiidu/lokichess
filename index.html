@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>LokiChess v0.8.5</title>
+    <title>LokiChess</title>
     <!-- Favicon linkitys -->
-    <link rel="icon" type="image/png" href="chess_images/favicon.png?v=0.8.4">
+    <link rel="icon" type="image/png" href="chess_images/favicon.png?v=0.8.6">
     <style>
         :root {
             --sq-white: #f0d9b5;
@@ -40,11 +40,21 @@
             --bg-color: #0f0c1b; --panel-bg: #1a162b; --text-color: #ff007f;
             --particle-color-1: rgba(255, 0, 127, 0.5); --particle-color-2: rgba(0, 242, 254, 0.5);
         }
+        /* Frosted Glass Theme */
+        body.theme-glass {
+            --sq-white: rgba(225, 240, 255, 0.7);
+            --sq-black: rgba(140, 175, 210, 0.7);
+            --board-border: rgba(255, 255, 255, 0.35);
+            --bg-color: #121d28;
+            --panel-bg: rgba(25, 38, 50, 0.85);
+            --text-color: #e0f2fe;
+            --particle-color-1: rgba(0, 242, 254, 0.6);
+            --particle-color-2: rgba(255, 255, 255, 0.4);
+            --board-shadow: 0 16px 40px rgba(0, 242, 254, 0.25);
+        }
 
         /* Board Textures */
-        #board.texture-flat .square {
-            background-image: none;
-        }
+        #board.texture-flat .square { background-image: none; }
 
         #board.texture-wood .square {
             background-image: 
@@ -73,6 +83,11 @@
                 repeating-radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.05) 0px, rgba(0, 0, 0, 0.05) 2px, transparent 2px, transparent 4px);
             box-shadow: inset 0 0 6px rgba(0,0,0,0.4);
             border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        #board.texture-glass .square {
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.15);
         }
 
         body {
@@ -114,6 +129,7 @@
         }
         h1 { margin: 0; font-size: 1.8rem; color: #f0d9b5; }
         body.theme-cyber h1 { color: #ff007f; text-shadow: 0 0 8px #ff007f; }
+        body.theme-glass h1 { color: #00f2fe; text-shadow: 0 0 12px rgba(0, 242, 254, 0.6); }
         
         .header-logo {
             height: 32px;
@@ -138,9 +154,11 @@
             min-height: 42px;
         }
         body.theme-cyber #info-box { border-color: #ff007f; box-shadow: 0 0 10px rgba(255,0,127,0.3); }
+        body.theme-glass #info-box { border-color: rgba(255,255,255,0.25); box-shadow: 0 4px 15px rgba(0,242,254,0.15); }
         #info { font-size: 1.05rem; font-weight: bold; }
         #score-display { font-size: 0.9rem; color: #f0d9b5; font-weight: bold; }
         body.theme-cyber #score-display { color: #00f2fe; }
+        body.theme-glass #score-display { color: #00f2fe; }
 
         .game-layout {
             display: flex;
@@ -183,20 +201,66 @@
             display: flex; flex-direction: column; flex: 1; overflow: hidden;
         }
         body.theme-cyber .panel-box { border-color: #ff007f; }
+        body.theme-glass .panel-box { border-color: rgba(255,255,255,0.2); }
         .panel-title {
             font-weight: bold; color: #f0d9b5; margin-bottom: 6px;
             font-size: 0.9rem; border-bottom: 1px solid #45423e; padding-bottom: 4px;
         }
         body.theme-cyber .panel-title { color: #ff007f; border-color: #ff007f; }
+        body.theme-glass .panel-title { color: #00f2fe; border-color: rgba(0,242,254,0.3); }
         .panel-scroll-content {
             overflow-y: auto; flex: 1; line-height: 1.4;
             font-family: system-ui, -apple-system, sans-serif; font-size: 0.8rem;
         }
 
         /* Detailed Log Styling */
+        .ai-log-entry {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #45423e;
+        }
+        .ai-log-entry:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
         .ai-eval-score { font-weight: bold; color: #00f2fe; }
         .ai-eval-text { color: #ddd; font-style: italic; margin-top: 2px; }
         .ai-pv-line { color: #aaa; font-family: monospace; font-size: 0.75rem; margin-top: 4px; word-break: break-all; }
+
+        /* Speech Bubble Overlay (Pointer Top / Arrow Up) */
+        #speech-bubble {
+            display: none;
+            position: absolute;
+            top: -65px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffffff;
+            color: #222;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 0.82rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 1000;
+            pointer-events: none;
+            max-width: 380px;
+            text-align: center;
+            animation: bubblePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #speech-bubble::after {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 0 8px 8px;
+            border-style: solid;
+            border-color: #ffffff transparent;
+            display: block;
+            width: 0;
+        }
+        @keyframes bubblePop { 0% { transform: translateX(-50%) scale(0.6); opacity: 0; } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }
 
         .spinner {
             width: 10px; height: 10px;
@@ -215,12 +279,17 @@
             overflow: visible;
         }
         body.theme-cyber #board-container { box-shadow: 0 0 20px rgba(255, 0, 127, 0.4); }
+        body.theme-glass #board-container { box-shadow: 0 8px 32px rgba(0, 242, 254, 0.25); border-color: rgba(255,255,255,0.3); }
         
         #board {
             display: grid; grid-template-columns: repeat(8, 60px);
             grid-template-rows: repeat(8, 60px); position: relative;
         }
-        .square { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .square { 
+            width: 60px; height: 60px; 
+            display: flex; align-items: center; justify-content: center; 
+            position: relative; 
+        }
         .white-sq { background-color: var(--sq-white); }
         .black-sq { background-color: var(--sq-black); }
         
@@ -238,7 +307,11 @@
             pointer-events: none !important;
         }
 
-        .selected { background-color: #7b9652 !important; }
+        /* Soft Pastel Colors for Movement & Hints */
+        .selected, .hint-from { 
+            background-color: rgba(255, 224, 178, 0.85) !important; /* Soft Pastel Orange */
+            box-shadow: inset 0 0 8px rgba(230, 160, 100, 0.6) !important; 
+        }
         body.theme-cyber .selected { background-color: #ff007f !important; }
         
         .switcharoo-first { background-color: #e67e22 !important; animation: pulseSwitch 0.8s infinite alternate; }
@@ -247,12 +320,16 @@
         .revolver-mode .square { cursor: crosshair !important; }
         .switcharoo-mode .square { cursor: pointer !important; }
 
-        .hint-from { background-color: #fff3a0 !important; box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.15); }
+        /* Soft Pastel Blue Pulse for Hint Destination Square */
         .hint-to { 
-            background-color: #b2fba5 !important; box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.15);
-            animation: pulsePastel 1.2s infinite alternate ease-in-out; 
+            background-color: rgba(179, 229, 252, 0.85) !important; /* Soft Pastel Blue */
+            box-shadow: inset 0 0 8px rgba(120, 190, 230, 0.6);
+            animation: pulsePastelBlue 1.2s infinite alternate ease-in-out; 
         }
-        @keyframes pulsePastel { 0% { background-color: #b2fba5; } 100% { background-color: #d4ffcd; } }
+        @keyframes pulsePastelBlue { 
+            0% { background-color: rgba(179, 229, 252, 0.75); } 
+            100% { background-color: rgba(225, 245, 254, 0.95); } 
+        }
 
         .valid-move::after {
             content: ''; width: 16px; height: 16px; background-color: rgba(0,0,0,0.25);
@@ -263,11 +340,19 @@
             background: var(--panel-bg); border: 1px solid #45423e; color: #fff;
             padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 1.1rem;
             display: flex; align-items: center; justify-content: center;
-            transition: background 0.2s; width: 48px; height: 42px; box-sizing: border-box;
+            transition: background 0.2s, border-color 0.2s; width: 48px; height: 42px; box-sizing: border-box;
         }
         body.theme-cyber .icon-btn { border-color: #ff007f; color: #ff007f; }
+        body.theme-glass .icon-btn { border-color: rgba(255,255,255,0.3); }
         .icon-btn:hover { background: #45423e; }
         .icon-btn.active-autoplay { background: #e74c3c !important; border-color: #ff6b6b; }
+        
+        /* Active Loading Hint Button Styling (Grey Background + White Spinner) */
+        .icon-btn.active-hint {
+            background: #45423e !important;
+            border-color: #66635f !important;
+            cursor: wait !important;
+        }
 
         #extra-panel {
             display: none; position: absolute; left: 60px; top: 260px;
@@ -285,6 +370,7 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.5);
         }
         body.theme-cyber #settings-panel, body.theme-cyber #extra-panel { border-color: #ff007f; }
+        body.theme-glass #settings-panel, body.theme-glass #extra-panel { border-color: rgba(255,255,255,0.3); }
         #settings-panel.open, #extra-panel.open { display: flex; }
         
         .extra-btn {
@@ -363,19 +449,9 @@
             text-align: center;
         }
 
-        .credits-row {
-            margin: 6px 0;
-        }
-
-        .credits-label {
-            color: #a09e9a;
-            font-size: 0.8rem;
-        }
-
-        .credits-val {
-            color: #ffffff;
-            font-weight: 600;
-        }
+        .credits-row { margin: 6px 0; }
+        .credits-label { color: #a09e9a; font-size: 0.8rem; }
+        .credits-val { color: #ffffff; font-weight: 600; }
 
         .purple-print {
             color: #c0a8ff;
@@ -416,7 +492,7 @@
 <div class="header">
     <h1>LokiChess</h1>
     <img src="chess_images/logo1.png" alt="LokiChess Logo" class="header-logo" onerror="this.style.display='none'">
-    <span class="version">v0.8.5</span>
+    <span class="version">v0.8.6</span>
 </div>
 
 <div id="info-box">
@@ -439,6 +515,9 @@
     </div>
 
     <div id="board-container">
+        <!-- Speech Bubble Overlay -->
+        <div id="speech-bubble">💭 Master AI Suggestion</div>
+
         <canvas id="confetti-canvas"></canvas>
         <div id="board" class="texture-flat">
             <div id="promotion-modal">
@@ -509,7 +588,7 @@
                 <button class="icon-btn" onclick="toggleSettings()" title="Settings">⚙️</button>
                 <button class="icon-btn" onclick="requestReset()" title="New Game">🔄</button>
                 <button class="icon-btn" onclick="undoMove()" title="Undo Move">↩️</button>
-                <button class="icon-btn" onclick="requestHint()" title="Get Hint">💡</button>
+                <button class="icon-btn" id="hint-btn" onclick="requestHint()" title="Get Hint">💡</button>
                 <button class="icon-btn" id="autoplay-btn" onclick="requestAutoplay()" title="Autoplay">▶️</button>
                 <button class="icon-btn" onclick="toggleExtraMenu()" title="Extra Features">🧪</button>
                 <button class="icon-btn" onclick="openCreditsModal()" title="Credits">📜</button>
@@ -525,14 +604,14 @@
         <div id="settings-panel">
             <div class="setting-item">
                 <label for="mode">Mode: </label>
-                <select id="mode" onchange="requestReset()">
+                <select id="mode" onchange="onSettingChange(); requestReset();">
                     <option value="ai">Player vs AI</option>
                     <option value="pvp">Player vs Player</option>
                 </select>
             </div>
             <div class="setting-item">
                 <label for="difficulty">Difficulty: </label>
-                <select id="difficulty">
+                <select id="difficulty" onchange="onDifficultyChange(); onSettingChange();">
                     <option value="toddler">Toddler (Skill 0)</option>
                     <option value="beginner">Beginner (d1)</option>
                     <option value="easy">Easy (d3)</option>
@@ -543,27 +622,29 @@
             </div>
             <div class="setting-item">
                 <label for="theme">Theme: </label>
-                <select id="theme" onchange="changeTheme(this.value)">
+                <select id="theme" onchange="changeTheme(this.value); onSettingChange();">
                     <option value="theme-classic" selected>Classic Wood</option>
                     <option value="theme-blue">Lichess Blue</option>
                     <option value="theme-emerald">Emerald Green</option>
                     <option value="theme-wood">Dark Wood</option>
                     <option value="theme-cyber">Cyberpunk</option>
+                    <option value="theme-glass">Glass (Frosted)</option>
                 </select>
             </div>
             <div class="setting-item">
                 <label for="texture">Texture: </label>
-                <select id="texture" onchange="changeTexture(this.value)">
+                <select id="texture" onchange="changeTexture(this.value); onSettingChange();">
                     <option value="texture-flat" selected>Flat Modern</option>
                     <option value="texture-wood">Wood Grain</option>
                     <option value="texture-marble">Marble</option>
                     <option value="texture-metal">Brushed Metal</option>
                     <option value="texture-stone">Ancient Stone</option>
+                    <option value="texture-glass">Glass Frost</option>
                 </select>
             </div>
             <div class="setting-item">
                 <label for="music-track">Music: </label>
-                <select id="music-track" onchange="changeMusicTrack(this.value)">
+                <select id="music-track" onchange="changeMusicTrack(this.value); onSettingChange();">
                     <option value="chess_music/music1.mp3">Track 1</option>
                     <option value="chess_music/music2.mp3">Track 2</option>
                     <option value="chess_music/music3.mp3">Track 3</option>
@@ -574,27 +655,27 @@
             </div>
             <div class="setting-item">
                 <label for="particles-toggle">Particles</label>
-                <input type="checkbox" id="particles-toggle" checked onchange="toggleParticles()">
+                <input type="checkbox" id="particles-toggle" checked onchange="toggleParticles(); onSettingChange();">
             </div>
             <div class="setting-item">
                 <label for="thoughts-toggle">AI Thoughts</label>
-                <input type="checkbox" id="thoughts-toggle" onchange="toggleSidePanels()">
+                <input type="checkbox" id="thoughts-toggle" onchange="toggleSidePanels(); onSettingChange();">
             </div>
             <div class="setting-item">
                 <label for="log-toggle">Move Log</label>
-                <input type="checkbox" id="log-toggle" onchange="toggleSidePanels()">
+                <input type="checkbox" id="log-toggle" onchange="toggleSidePanels(); onSettingChange();">
             </div>
             <div class="setting-item">
                 <label for="sound-toggle">SFX</label>
-                <input type="checkbox" id="sound-toggle" checked>
+                <input type="checkbox" id="sound-toggle" checked onchange="onSettingChange();">
             </div>
             <div class="setting-item">
                 <label for="music-toggle">Music</label>
-                <input type="checkbox" id="music-toggle" checked onchange="toggleMusic()">
+                <input type="checkbox" id="music-toggle" checked onchange="toggleMusic(); onSettingChange();">
             </div>
             <div class="setting-item">
                 <label for="music-vol">Volume</label>
-                <input type="range" id="music-vol" min="0" max="1" step="0.1" value="0.3" oninput="updateMusicVol()" style="width: 70px;">
+                <input type="range" id="music-vol" min="0" max="1" step="0.1" value="0.3" oninput="updateMusicVol(); onSettingChange();" style="width: 70px;">
             </div>
         </div>
     </div>
@@ -627,12 +708,15 @@ let musicStarted = false;
 let moveHistory = [];
 let gameStateHistory = [];
 let currentTurnAIAnalysis = { score: "", desc: "", pv: "" };
+let activeThinkingElement = null; // Holds the current thinking div in log
 let isAIThinking = false;
 let currentHint = null;
 let isHintRequest = false;
 let isAutoplayActive = false;
 let isUIHidden = true;
 let lastPlayedTrack = null;
+let speechBubbleTimer = null;
+let lastExecutingAIType = "AI";
 
 // Extra Features States
 let isDrunkAI = false;
@@ -646,6 +730,80 @@ document.addEventListener('touchstart', startMusicFirstTime, { once: true });
 function startMusicFirstTime() {
     if (!musicStarted && document.getElementById('music-toggle').checked) {
         toggleMusic();
+    }
+}
+
+/* LocalStorage Settings Management */
+function saveSettings() {
+    const settings = {
+        mode: document.getElementById('mode').value,
+        difficulty: document.getElementById('difficulty').value,
+        theme: document.getElementById('theme').value,
+        texture: document.getElementById('texture').value,
+        musicTrack: document.getElementById('music-track').value,
+        particlesToggle: document.getElementById('particles-toggle').checked,
+        thoughtsToggle: document.getElementById('thoughts-toggle').checked,
+        logToggle: document.getElementById('log-toggle').checked,
+        soundToggle: document.getElementById('sound-toggle').checked,
+        musicToggle: document.getElementById('music-toggle').checked,
+        musicVol: document.getElementById('music-vol').value
+    };
+    localStorage.setItem('lokichess_settings', JSON.stringify(settings));
+}
+
+function loadSettings() {
+    const saved = localStorage.getItem('lokichess_settings');
+    if (!saved) return;
+    try {
+        const s = JSON.parse(saved);
+        if (s.mode !== undefined) document.getElementById('mode').value = s.mode;
+        if (s.difficulty !== undefined) document.getElementById('difficulty').value = s.difficulty;
+        if (s.theme !== undefined) {
+            document.getElementById('theme').value = s.theme;
+            changeTheme(s.theme);
+        }
+        if (s.texture !== undefined) {
+            document.getElementById('texture').value = s.texture;
+            changeTexture(s.texture);
+        }
+        if (s.musicTrack !== undefined) document.getElementById('music-track').value = s.musicTrack;
+        if (s.particlesToggle !== undefined) document.getElementById('particles-toggle').checked = s.particlesToggle;
+        if (s.thoughtsToggle !== undefined) document.getElementById('thoughts-toggle').checked = s.thoughtsToggle;
+        if (s.logToggle !== undefined) document.getElementById('log-toggle').checked = s.logToggle;
+        if (s.soundToggle !== undefined) document.getElementById('sound-toggle').checked = s.soundToggle;
+        if (s.musicToggle !== undefined) document.getElementById('music-toggle').checked = s.musicToggle;
+        if (s.musicVol !== undefined) {
+            document.getElementById('music-vol').value = s.musicVol;
+            updateMusicVol();
+        }
+        toggleSidePanels();
+    } catch(e) { console.warn("Failed to load settings:", e); }
+}
+
+function onSettingChange() {
+    saveSettings();
+}
+
+function getActiveDifficultyName() {
+    if (isDrunkAI) return "Drunk AI 🍹";
+    const diff = document.getElementById('difficulty').value;
+    if (diff === 'toddler') return "Toddler AI";
+    if (diff === 'beginner') return "Beginner AI";
+    if (diff === 'easy') return "Easy AI";
+    if (diff === 'medium') return "Medium AI";
+    if (diff === 'hard') return "Hard AI";
+    if (diff === 'master') return "Master AI";
+    return "AI";
+}
+
+function onDifficultyChange() {
+    if (stockfish && aiReady) {
+        const diff = document.getElementById('difficulty').value;
+        let skillLevel = 20;
+        if (diff === 'toddler') skillLevel = 0;
+        else if (diff === 'beginner') skillLevel = 3;
+        else if (diff === 'easy') skillLevel = 7;
+        stockfish.postMessage("setoption name Skill Level value " + skillLevel);
     }
 }
 
@@ -847,6 +1005,17 @@ function handleMusicEnded() {
     }
 }
 
+function showSpeechBubble(text) {
+    const bubble = document.getElementById('speech-bubble');
+    bubble.textContent = text;
+    bubble.style.display = 'block';
+    
+    if (speechBubbleTimer) clearTimeout(speechBubbleTimer);
+    speechBubbleTimer = setTimeout(() => {
+        bubble.style.display = 'none';
+    }, 4500);
+}
+
 function toggleAllUIControls() {
     isUIHidden = !isUIHidden;
     const controlsBar = document.getElementById('controls-bar');
@@ -907,6 +1076,7 @@ function offerDrink() {
 
     const aiContainer = document.getElementById('ai-log-content');
     const p = document.createElement('div');
+    p.className = 'ai-log-entry';
     p.style.color = '#e67e22';
     p.textContent = "🍹 You offered AI a drink! (AI is drunk)";
     aiContainer.appendChild(p);
@@ -946,9 +1116,11 @@ function executeSwitcharoo(r1, c1, r2, c2) {
     
     const aiContainer = document.getElementById('ai-log-content');
     const p = document.createElement('div');
+    p.className = 'ai-log-entry';
     p.style.color = '#e67e22';
     p.textContent = `🔄 Switcharoo! ${toAlgebraic(r1, c1)} swapped with ${toAlgebraic(r2, c2)}`;
     aiContainer.appendChild(p);
+    aiContainer.scrollTop = aiContainer.scrollHeight;
     
     updateScoreDisplay();
     clearExtraModes();
@@ -976,7 +1148,8 @@ function confirmAutoplay(shouldStart) {
         isAutoplayActive = true;
         document.getElementById('autoplay-btn').classList.add('active-autoplay');
         document.getElementById('autoplay-btn').textContent = "⏹️";
-        triggerAIMove();
+        // Autoplay starts with current turn
+        triggerAIMove(turn === 'w');
     }
 }
 
@@ -984,6 +1157,34 @@ function stopAutoplay() {
     isAutoplayActive = false;
     document.getElementById('autoplay-btn').classList.remove('active-autoplay');
     document.getElementById('autoplay-btn').textContent = "▶️";
+}
+
+function generateMoveReason(moveStr, prefix = "Master AI") {
+    const fc = moveStr.charCodeAt(0) - 97, fr = 8 - parseInt(moveStr[1]);
+    const tc = moveStr.charCodeAt(2) - 97, tr = 8 - parseInt(moveStr[3]);
+    const piece = boardState[fr][fc];
+    const targetPiece = boardState[tr][tc];
+
+    const pName = PIECE_NAMES[piece ? piece[1] : 'P'] || 'Piece';
+    const dest = toAlgebraic(tr, tc);
+
+    if (targetPiece) {
+        const tName = PIECE_NAMES[targetPiece[1]] || 'piece';
+        return `${prefix} captures opponent's ${tName} at ${dest} for a material gain!`;
+    }
+    if ((tr === 3 || tr === 4) && (tc === 3 || tc === 4)) {
+        return `${prefix} moves ${pName} to ${dest} to claim strong central control!`;
+    }
+    if (piece && piece[1] === 'K' && Math.abs(tc - fc) === 2) {
+        return `${prefix} castles the King for safety and activates the Rook!`;
+    }
+    if (piece && piece[1] === 'N') {
+        return `${prefix} develops Knight to ${dest} for active piece placement!`;
+    }
+    if (piece && piece[1] === 'B') {
+        return `${prefix} deploys Bishop to ${dest} controlling key diagonals!`;
+    }
+    return `${prefix} moves ${pName} to ${dest} to optimize positional pressure!`;
 }
 
 function initStockfish() {
@@ -1039,7 +1240,7 @@ function initStockfish() {
                         pv: pvLine
                     };
 
-                    if (isAIThinking) updateAILogDisplay();
+                    if (isAIThinking && !isHintRequest) updateAILogDisplay();
                 }
                 
                 if (line.startsWith('bestmove')) {
@@ -1048,8 +1249,19 @@ function initStockfish() {
                     
                     if (isHintRequest) {
                         isHintRequest = false;
+                        
+                        const hintBtn = document.getElementById('hint-btn');
+                        hintBtn.classList.remove('active-hint');
+                        hintBtn.innerHTML = "💡";
+
                         showHintMove(moveStr);
                     } else {
+                        // Display speech bubble ONLY for Player's Turn in Autoplay
+                        if (isAutoplayActive && turn === 'w') {
+                            const reason = generateMoveReason(moveStr, "Master AI");
+                            showSpeechBubble("💡 " + reason);
+                        }
+
                         appendAIFinalMove(moveStr);
                         if (moveStr) animateAIMove(moveStr);
                     }
@@ -1066,6 +1278,14 @@ function resetGame() {
     clearExtraModes();
     isDrunkAI = false;
     document.getElementById('gameover-modal').style.display = 'none';
+    document.getElementById('speech-bubble').style.display = 'none';
+    
+    const hintBtn = document.getElementById('hint-btn');
+    if (hintBtn) {
+        hintBtn.classList.remove('active-hint');
+        hintBtn.innerHTML = "💡";
+    }
+
     boardState = [
         ['bR','bN','bB','bQ','bK','bB','bN','bR'],
         ['bP','bP','bP','bP','bP','bP','bP','bP'],
@@ -1083,15 +1303,17 @@ function resetGame() {
     moveHistory = [];
     gameStateHistory = [];
     isAIThinking = false;
+    isHintRequest = false;
     currentHint = null;
     currentTurnAIAnalysis = { score: "", desc: "", pv: "" };
+    activeThinkingElement = null;
     
     if (document.getElementById('music-track').value === 'shuffle') {
         playRandomTrack();
     }
     
     document.getElementById('info').textContent = "Turn: White";
-    document.getElementById('ai-log-content').innerHTML = "Idle.";
+    document.getElementById('ai-log-content').innerHTML = "<div class='ai-log-entry'>Game started.</div>";
     document.getElementById('move-log-content').textContent = "Game started.";
     updateScoreDisplay();
     drawBoard();
@@ -1111,7 +1333,7 @@ function undoMove() {
     stopAutoplay();
     clearExtraModes();
     currentHint = null;
-
+    document.getElementById('speech-bubble').style.display = 'none';
     document.getElementById('gameover-modal').style.display = 'none';
 
     const isAI = document.getElementById('mode').value === 'ai';
@@ -1138,11 +1360,25 @@ function undoMove() {
 }
 
 function requestHint() {
-    if (isAIThinking || !aiReady) return;
+    if (isAIThinking || isHintRequest || !aiReady) return;
     isHintRequest = true;
+
+    const hintBtn = document.getElementById('hint-btn');
+    hintBtn.classList.add('active-hint');
+    hintBtn.innerHTML = `<span class="spinner"></span>`;
+
+    const aiContainer = document.getElementById('ai-log-content');
+    const hintThinkDiv = document.createElement('div');
+    hintThinkDiv.className = 'ai-log-entry';
+    hintThinkDiv.id = 'active-hint-think-entry';
+    hintThinkDiv.innerHTML = `<div><span class="spinner"></span> Master AI calculating best hint...</div>`;
+    aiContainer.appendChild(hintThinkDiv);
+    aiContainer.scrollTop = aiContainer.scrollHeight;
+
     const fen = boardToFEN();
+    stockfish.postMessage("setoption name Skill Level value 20");
     stockfish.postMessage("position fen " + fen);
-    stockfish.postMessage("go depth 8 movetime 800");
+    stockfish.postMessage("go depth 18 movetime 2500");
 }
 
 function showHintMove(moveStr) {
@@ -1152,16 +1388,15 @@ function showHintMove(moveStr) {
     
     currentHint = { from: [fr, fc], to: [tr, tc] };
     
-    const piece = boardState[fr][fc];
-    const pName = PIECE_NAMES[piece[1]] || 'Piece';
-    const dest = toAlgebraic(tr, tc);
-    
+    const reasonText = "💡 " + generateMoveReason(moveStr, "Master AI");
+    showSpeechBubble(reasonText);
+
+    const hintThinkDiv = document.getElementById('active-hint-think-entry');
+    if (hintThinkDiv) {
+        hintThinkDiv.innerHTML = `<div><strong>Hint Ready:</strong></div><div style="color:#ffeb3b; margin-top:4px;">${reasonText}</div>`;
+    }
+
     const aiContainer = document.getElementById('ai-log-content');
-    const p = document.createElement('div');
-    p.style.color = '#ffeb3b';
-    p.style.marginTop = '6px';
-    p.textContent = `💡 Hint: Move ${pName} to ${dest}`;
-    aiContainer.appendChild(p);
     aiContainer.scrollTop = aiContainer.scrollHeight;
 
     drawBoard();
@@ -1199,37 +1434,44 @@ function updateScoreDisplay() {
 }
 
 function updateAILogDisplay() {
+    if (!activeThinkingElement) return;
+
+    activeThinkingElement.innerHTML = `
+        <div><span class="spinner"></span> <strong>${lastExecutingAIType}</strong> analyzing...</div>
+        ${currentTurnAIAnalysis.score ? `<div class="ai-eval-score">Eval: ${currentTurnAIAnalysis.score}</div>` : ''}
+        ${currentTurnAIAnalysis.desc ? `<div class="ai-eval-text">${currentTurnAIAnalysis.desc}</div>` : ''}
+        ${currentTurnAIAnalysis.pv ? `<div class="ai-pv-line">${currentTurnAIAnalysis.pv}</div>` : ''}
+    `;
+
     const aiContainer = document.getElementById('ai-log-content');
-    if (isAIThinking) {
-        aiContainer.innerHTML = `
-            <div><span class="spinner"></span> Analyzing position...</div>
-            ${currentTurnAIAnalysis.score ? `<div class="ai-eval-score">Eval: ${currentTurnAIAnalysis.score}</div>` : ''}
-            ${currentTurnAIAnalysis.desc ? `<div class="ai-eval-text">${currentTurnAIAnalysis.desc}</div>` : ''}
-            ${currentTurnAIAnalysis.pv ? `<div class="ai-pv-line">${currentTurnAIAnalysis.pv}</div>` : ''}
-        `;
-    } else {
-        if (currentTurnAIAnalysis.score) {
-            aiContainer.innerHTML = `
-                <div><strong>Analysis Complete:</strong></div>
-                <div class="ai-eval-score">Eval: ${currentTurnAIAnalysis.score}</div>
-                <div class="ai-eval-text">${currentTurnAIAnalysis.desc}</div>
-                ${currentTurnAIAnalysis.pv ? `<div class="ai-pv-line">${currentTurnAIAnalysis.pv}</div>` : ''}
-            `;
-        } else {
-            aiContainer.innerHTML = "Idle.";
-        }
-    }
+    aiContainer.scrollTop = aiContainer.scrollHeight;
 }
 
 function appendAIFinalMove(moveStr) {
     const aiContainer = document.getElementById('ai-log-content');
     const moveNum = Math.floor(moveHistory.length / 2) + 1;
-    const p = document.createElement('div');
-    p.style.marginTop = '6px';
-    p.style.borderTop = '1px solid #45423e';
-    p.style.paddingTop = '4px';
-    p.textContent = `[Move ${moveNum}] AI played ${moveStr}.`;
-    aiContainer.appendChild(p);
+    
+    // Explicitly identify who made the move
+    const diffName = lastExecutingAIType;
+    const reasonText = generateMoveReason(moveStr, diffName);
+
+    const finalHTML = `
+        <div><strong>Move ${moveNum} [${diffName}]:</strong></div>
+        ${currentTurnAIAnalysis.score ? `<div class="ai-eval-score">Eval: ${currentTurnAIAnalysis.score}</div>` : ''}
+        <div style="margin-top:4px; color:#ddd;">${reasonText}</div>
+        ${currentTurnAIAnalysis.pv ? `<div class="ai-pv-line">${currentTurnAIAnalysis.pv}</div>` : ''}
+    `;
+
+    if (activeThinkingElement) {
+        activeThinkingElement.innerHTML = finalHTML;
+        activeThinkingElement = null;
+    } else {
+        const entry = document.createElement('div');
+        entry.className = 'ai-log-entry';
+        entry.innerHTML = finalHTML;
+        aiContainer.appendChild(entry);
+    }
+
     aiContainer.scrollTop = aiContainer.scrollHeight;
 }
 
@@ -1271,17 +1513,21 @@ function drawBoard() {
                 sq.appendChild(pEl);
             }
 
-            if (selectedPos && selectedPos[0] === r && selectedPos[1] === c) sq.classList.add('selected');
+            // Highlighting hint square: keep soft orange for origin, soft pastel blue for destination
+            const isHintFrom = currentHint && currentHint.from[0] === r && currentHint.from[1] === c;
+            const isHintTo = currentHint && currentHint.to[0] === r && currentHint.to[1] === c;
+
+            if (selectedPos && selectedPos[0] === r && selectedPos[1] === c && !isHintFrom) {
+                sq.classList.add('selected');
+            }
             if (validMoves.some(m => m.r === r && m.c === c)) sq.classList.add('valid-move');
 
             if (switcharooFirstPiece && switcharooFirstPiece[0] === r && switcharooFirstPiece[1] === c) {
                 sq.classList.add('switcharoo-first');
             }
 
-            if (currentHint) {
-                if (currentHint.from[0] === r && currentHint.from[1] === c) sq.classList.add('hint-from');
-                if (currentHint.to[0] === r && currentHint.to[1] === c) sq.classList.add('hint-to');
-            }
+            if (isHintFrom) sq.classList.add('hint-from');
+            if (isHintTo) sq.classList.add('hint-to');
 
             sq.addEventListener('click', () => handleSquareClick(r, c));
             boardEl.appendChild(sq);
@@ -1440,9 +1686,11 @@ function handleSquareClick(r, c) {
                 
                 const aiContainer = document.getElementById('ai-log-content');
                 const p = document.createElement('div');
+                p.className = 'ai-log-entry';
                 p.style.color = '#e74c3c';
                 p.textContent = `🔫 BANG! ${piece} at ${toAlgebraic(r, c)} was eliminated!`;
                 aiContainer.appendChild(p);
+                aiContainer.scrollTop = aiContainer.scrollHeight;
 
                 if (piece[1] === 'K' && piece[0] === turn) {
                     updateScoreDisplay();
@@ -1535,7 +1783,11 @@ function animateMove(fr, fc, tr, tc, callback) {
     pEl.style.transition = 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)';
     pEl.style.transform = `translate(${dx}px, ${dy}px)`;
 
-    setTimeout(callback, 250);
+    setTimeout(() => {
+        pEl.style.transition = 'none';
+        pEl.style.transform = 'none';
+        callback();
+    }, 250);
 }
 
 function selectPromotion(promoPiece) {
@@ -1608,10 +1860,11 @@ function executeMove(from, move, promoPiece = 'Q') {
         infoEl.textContent = `Turn: ${turn === 'w' ? 'White' : 'Black'}${inCheck ? ' (CHECK!)' : ''}${isDrunkAI ? ' (AI is drunk 🍹)' : ''}`;
         
         if (isAutoplayActive) {
-            setTimeout(triggerAIMove, 600);
+            // In Autoplay, White uses Master AI (true), Black uses Opponent's Difficulty (false)
+            setTimeout(() => triggerAIMove(turn === 'w'), 600);
         } else {
             const isAI = document.getElementById('mode').value === 'ai';
-            if (isAI && turn === 'b') setTimeout(triggerAIMove, 250);
+            if (isAI && turn === 'b') setTimeout(() => triggerAIMove(false), 250);
         }
     }
     drawBoard();
@@ -1662,16 +1915,23 @@ function launchConfetti() {
     render();
 }
 
-function triggerAIMove() {
+function triggerAIMove(forceMaster = false) {
     if (aiReady && stockfish) {
         const fen = boardToFEN();
         
         let depth = 8, movetime = 1000, skillLevel = 20;
-        if (isDrunkAI) {
+
+        if (forceMaster) {
+            depth = 18; movetime = 2500; skillLevel = 20;
+            lastExecutingAIType = "Master AI";
+        } else if (isDrunkAI) {
             depth = 1; movetime = 200; skillLevel = 0;
             isDrunkAI = false;
+            lastExecutingAIType = "Drunk AI 🍹";
         } else {
             const diff = document.getElementById('difficulty').value;
+            lastExecutingAIType = getActiveDifficultyName();
+
             if (diff === 'toddler') { depth = 1; movetime = 100; skillLevel = 0; }
             else if (diff === 'beginner') { depth = 1; movetime = 150; skillLevel = 3; }
             else if (diff === 'easy') { depth = 3; movetime = 400; skillLevel = 7; }
@@ -1681,12 +1941,19 @@ function triggerAIMove() {
         }
 
         isAIThinking = true;
+
+        // Append a new entry for active thinking
+        const aiContainer = document.getElementById('ai-log-content');
+        activeThinkingElement = document.createElement('div');
+        activeThinkingElement.className = 'ai-log-entry';
+        aiContainer.appendChild(activeThinkingElement);
+
         updateAILogDisplay();
 
         stockfish.postMessage("setoption name Skill Level value " + skillLevel);
         stockfish.postMessage("position fen " + fen);
         stockfish.postMessage(`go depth ${depth} movetime ${movetime}`);
-    } else setTimeout(makeFallbackAIMove, 500);
+    } else setTimeout(() => makeFallbackAIMove(), 500);
 }
 
 function animateAIMove(moveStr) {
@@ -1852,6 +2119,7 @@ function playerHasLegalMoves(color) {
 
 initStockfish();
 initParticles();
+loadSettings();
 resetGame();
 </script>
 </body>
