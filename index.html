@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>LokiChess</title>
     <!-- Favicon linkitys -->
-    <link rel="icon" type="image/png" href="chess_images/favicon.png?v=0.8.6">
+    <link rel="icon" type="image/png" href="chess_images/favicon.png">
     <style>
         :root {
             --sq-white: #f0d9b5;
@@ -213,6 +213,17 @@
             font-family: system-ui, -apple-system, sans-serif; font-size: 0.8rem;
         }
 
+        /* Move Log Special Entry for Openings */
+        .opening-log-entry {
+            background: rgba(0, 242, 254, 0.1);
+            border-left: 3px solid #00f2fe;
+            padding: 4px 6px;
+            margin: 4px 0;
+            font-size: 0.75rem;
+            color: #e0f2fe;
+            border-radius: 0 4px 4px 0;
+        }
+
         /* Detailed Log Styling */
         .ai-log-entry {
             margin-bottom: 8px;
@@ -247,6 +258,7 @@
             max-width: 380px;
             text-align: center;
             animation: bubblePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            white-space: pre-line;
         }
         #speech-bubble::after {
             content: '';
@@ -492,7 +504,7 @@
 <div class="header">
     <h1>LokiChess</h1>
     <img src="chess_images/logo1.png" alt="LokiChess Logo" class="header-logo" onerror="this.style.display='none'">
-    <span class="version">v0.8.6</span>
+    <span class="version">v0.8.7</span>
 </div>
 
 <div id="info-box">
@@ -504,7 +516,7 @@
     <div class="left-slot">
         <div id="side-panel">
             <div class="panel-box" id="ai-panel">
-                <div class="panel-title">🧠 AI Thinking & Analysis</div>
+                <div class="panel-title">🧠 Loki's Thinking & Analysis</div>
                 <div class="panel-scroll-content" id="ai-log-content">Idle.</div>
             </div>
             <div class="panel-box" id="move-panel">
@@ -516,7 +528,7 @@
 
     <div id="board-container">
         <!-- Speech Bubble Overlay -->
-        <div id="speech-bubble">💭 Master AI Suggestion</div>
+        <div id="speech-bubble">💭 Loki Suggestion</div>
 
         <canvas id="confetti-canvas"></canvas>
         <div id="board" class="texture-flat">
@@ -539,7 +551,7 @@
 
             <div id="autoplay-confirm-modal">
                 <div class="confirm-box">
-                    <p>Are you sure you want to let the AI finish the game automatically?</p>
+                    <p>Are you sure you want to let Loki finish the game automatically?</p>
                     <div class="confirm-btns">
                         <button class="confirm-btn-yes" onclick="confirmAutoplay(true)">Yes</button>
                         <button onclick="confirmAutoplay(false)">Cancel</button>
@@ -605,19 +617,18 @@
             <div class="setting-item">
                 <label for="mode">Mode: </label>
                 <select id="mode" onchange="onSettingChange(); requestReset();">
-                    <option value="ai">Player vs AI</option>
+                    <option value="ai">Player vs Loki</option>
                     <option value="pvp">Player vs Player</option>
                 </select>
             </div>
             <div class="setting-item">
                 <label for="difficulty">Difficulty: </label>
                 <select id="difficulty" onchange="onDifficultyChange(); onSettingChange();">
-                    <option value="toddler">Toddler (Skill 0)</option>
-                    <option value="beginner">Beginner (d1)</option>
-                    <option value="easy">Easy (d3)</option>
-                    <option value="medium" selected>Medium (d8)</option>
-                    <option value="hard">Hard (d12)</option>
-                    <option value="master">Master (d18)</option>
+                    <option value="toddler">Toddler Loki (Skill 0)</option>
+                    <option value="puppy">Puppy Loki (d1)</option>
+                    <option value="loki">Loki (d3)</option>
+                    <option value="senior" selected>Senior Loki (d8)</option>
+                    <option value="gm">GM Loki (d18)</option>
                 </select>
             </div>
             <div class="setting-item">
@@ -658,7 +669,7 @@
                 <input type="checkbox" id="particles-toggle" checked onchange="toggleParticles(); onSettingChange();">
             </div>
             <div class="setting-item">
-                <label for="thoughts-toggle">AI Thoughts</label>
+                <label for="thoughts-toggle">Loki's Thoughts</label>
                 <input type="checkbox" id="thoughts-toggle" onchange="toggleSidePanels(); onSettingChange();">
             </div>
             <div class="setting-item">
@@ -680,6 +691,9 @@
         </div>
     </div>
 </div>
+
+<!-- Avaustietokannan ulkoinen kooditiedosto -->
+<script src="openings.js"></script>
 
 <script>
 const PIECE_IMAGES = {
@@ -716,7 +730,11 @@ let isAutoplayActive = false;
 let isUIHidden = true;
 let lastPlayedTrack = null;
 let speechBubbleTimer = null;
-let lastExecutingAIType = "AI";
+let lastExecutingAIType = "Loki";
+let lastAnnouncedOpening = "";
+
+// Track openings per move index so they stay persistent in Move Log
+let openingHistoryMap = {};
 
 // Extra Features States
 let isDrunkAI = false;
@@ -785,15 +803,14 @@ function onSettingChange() {
 }
 
 function getActiveDifficultyName() {
-    if (isDrunkAI) return "Drunk AI 🍹";
+    if (isDrunkAI) return "Drunk Loki 🍹";
     const diff = document.getElementById('difficulty').value;
-    if (diff === 'toddler') return "Toddler AI";
-    if (diff === 'beginner') return "Beginner AI";
-    if (diff === 'easy') return "Easy AI";
-    if (diff === 'medium') return "Medium AI";
-    if (diff === 'hard') return "Hard AI";
-    if (diff === 'master') return "Master AI";
-    return "AI";
+    if (diff === 'toddler') return "Toddler Loki";
+    if (diff === 'puppy') return "Puppy Loki";
+    if (diff === 'loki') return "Loki";
+    if (diff === 'senior') return "Senior Loki";
+    if (diff === 'gm') return "GM Loki";
+    return "Loki";
 }
 
 function onDifficultyChange() {
@@ -801,8 +818,9 @@ function onDifficultyChange() {
         const diff = document.getElementById('difficulty').value;
         let skillLevel = 20;
         if (diff === 'toddler') skillLevel = 0;
-        else if (diff === 'beginner') skillLevel = 3;
-        else if (diff === 'easy') skillLevel = 7;
+        else if (diff === 'puppy') skillLevel = 3;
+        else if (diff === 'loki') skillLevel = 7;
+        else if (diff === 'senior') skillLevel = 12;
         stockfish.postMessage("setoption name Skill Level value " + skillLevel);
     }
 }
@@ -1013,7 +1031,44 @@ function showSpeechBubble(text) {
     if (speechBubbleTimer) clearTimeout(speechBubbleTimer);
     speechBubbleTimer = setTimeout(() => {
         bubble.style.display = 'none';
-    }, 4500);
+    }, 5000);
+}
+
+function checkAndAnnounceOpening() {
+    if (typeof CHESS_OPENINGS === 'undefined') return;
+
+    const pgnString = moveHistory.join(' ');
+    let detectedOpening = null;
+    let maxMatchLen = 0;
+
+    for (const [moves, name] of Object.entries(CHESS_OPENINGS)) {
+        if (pgnString.startsWith(moves) && moves.length > maxMatchLen) {
+            detectedOpening = name;
+            maxMatchLen = moves.length;
+        }
+    }
+
+    if (detectedOpening && detectedOpening !== lastAnnouncedOpening) {
+        lastAnnouncedOpening = detectedOpening;
+
+        // 1. Näytetään puhekupla
+        showSpeechBubble(detectedOpening);
+
+        // 2. Tallennetaan Move Logiin
+        openingHistoryMap[moveHistory.length - 1] = detectedOpening;
+        rebuildMoveLogUI();
+
+        // 3. Lisätään tieto myös Loki's Thinking & Analysis -välilehdelle
+        const aiContainer = document.getElementById('ai-log-content');
+        const entry = document.createElement('div');
+        entry.className = 'ai-log-entry';
+        entry.style.borderLeft = '3px solid #00f2fe';
+        entry.style.paddingLeft = '6px';
+        entry.style.background = 'rgba(0, 242, 254, 0.08)';
+        entry.innerHTML = `<div style="color:#00f2fe; font-weight:bold;">Loki identified an opening:</div><div style="color:#ddd; margin-top:2px;">${detectedOpening.replace(/\n/g, '<br>')}</div>`;
+        aiContainer.appendChild(entry);
+        aiContainer.scrollTop = aiContainer.scrollHeight;
+    }
 }
 
 function toggleAllUIControls() {
@@ -1072,13 +1127,13 @@ function offerDrink() {
     document.getElementById('extra-panel').classList.remove('open');
     isDrunkAI = true;
     playSound('drink');
-    document.getElementById('info').textContent = `Turn: ${turn === 'w' ? 'White' : 'Black'} (AI is drunk 🍹)`;
+    document.getElementById('info').textContent = `Turn: ${turn === 'w' ? 'White' : 'Black'} (Loki is drunk 🍹)`;
 
     const aiContainer = document.getElementById('ai-log-content');
     const p = document.createElement('div');
     p.className = 'ai-log-entry';
     p.style.color = '#e67e22';
-    p.textContent = "🍹 You offered AI a drink! (AI is drunk)";
+    p.textContent = "🍹 You offered Loki a drink! (Loki is drunk)";
     aiContainer.appendChild(p);
     aiContainer.scrollTop = aiContainer.scrollHeight;
 }
@@ -1159,7 +1214,7 @@ function stopAutoplay() {
     document.getElementById('autoplay-btn').textContent = "▶️";
 }
 
-function generateMoveReason(moveStr, prefix = "Master AI") {
+function generateMoveReason(moveStr, prefix = "Loki") {
     const fc = moveStr.charCodeAt(0) - 97, fr = 8 - parseInt(moveStr[1]);
     const tc = moveStr.charCodeAt(2) - 97, tr = 8 - parseInt(moveStr[3]);
     const piece = boardState[fr][fc];
@@ -1170,21 +1225,21 @@ function generateMoveReason(moveStr, prefix = "Master AI") {
 
     if (targetPiece) {
         const tName = PIECE_NAMES[targetPiece[1]] || 'piece';
-        return `${prefix} captures opponent's ${tName} at ${dest} for a material gain!`;
+        return `${prefix} advises capturing opponent's ${tName} at ${dest} for a material gain!`;
     }
     if ((tr === 3 || tr === 4) && (tc === 3 || tc === 4)) {
-        return `${prefix} moves ${pName} to ${dest} to claim strong central control!`;
+        return `${prefix} advises moving ${pName} to ${dest} to claim strong central control!`;
     }
     if (piece && piece[1] === 'K' && Math.abs(tc - fc) === 2) {
-        return `${prefix} castles the King for safety and activates the Rook!`;
+        return `${prefix} advises castling the King for safety and activating the Rook!`;
     }
     if (piece && piece[1] === 'N') {
-        return `${prefix} develops Knight to ${dest} for active piece placement!`;
+        return `${prefix} advises developing Knight to ${dest} for active piece placement!`;
     }
     if (piece && piece[1] === 'B') {
-        return `${prefix} deploys Bishop to ${dest} controlling key diagonals!`;
+        return `${prefix} advises deploying Bishop to ${dest} controlling key diagonals!`;
     }
-    return `${prefix} moves ${pName} to ${dest} to optimize positional pressure!`;
+    return `${prefix} advises moving ${pName} to ${dest} to optimize positional pressure!`;
 }
 
 function initStockfish() {
@@ -1206,7 +1261,7 @@ function initStockfish() {
 
                     if (isDrunkAI) {
                         evalScoreStr = "🍹 Drunk Eval";
-                        humanEval = "AI is dizzy from the drink and plays randomly!";
+                        humanEval = "Loki is dizzy from the drink and plays randomly!";
                     } else if (mateMatch) {
                         let m = parseInt(mateMatch[1]);
                         if (turn === 'b') m = -m;
@@ -1258,7 +1313,7 @@ function initStockfish() {
                     } else {
                         // Display speech bubble ONLY for Player's Turn in Autoplay
                         if (isAutoplayActive && turn === 'w') {
-                            const reason = generateMoveReason(moveStr, "Master AI");
+                            const reason = generateMoveReason(moveStr, "Loki");
                             showSpeechBubble("💡 " + reason);
                         }
 
@@ -1277,6 +1332,8 @@ function resetGame() {
     stopAutoplay();
     clearExtraModes();
     isDrunkAI = false;
+    lastAnnouncedOpening = "";
+    openingHistoryMap = {};
     document.getElementById('gameover-modal').style.display = 'none';
     document.getElementById('speech-bubble').style.display = 'none';
     
@@ -1325,7 +1382,8 @@ function saveGameState() {
         turn: turn,
         castlingRights: { ...castlingRights },
         enPassantTarget: enPassantTarget ? [...enPassantTarget] : null,
-        moveHistory: [...moveHistory]
+        moveHistory: [...moveHistory],
+        openingHistoryMap: JSON.parse(JSON.stringify(openingHistoryMap))
     });
 }
 
@@ -1333,6 +1391,7 @@ function undoMove() {
     stopAutoplay();
     clearExtraModes();
     currentHint = null;
+    lastAnnouncedOpening = "";
     document.getElementById('speech-bubble').style.display = 'none';
     document.getElementById('gameover-modal').style.display = 'none';
 
@@ -1349,6 +1408,7 @@ function undoMove() {
         castlingRights = stateToRestore.castlingRights;
         enPassantTarget = stateToRestore.enPassantTarget;
         moveHistory = stateToRestore.moveHistory;
+        openingHistoryMap = stateToRestore.openingHistoryMap || {};
 
         const inCheck = isKingInCheck(turn, boardState);
         document.getElementById('info').textContent = `Turn: ${turn === 'w' ? 'White' : 'Black'}${inCheck ? ' (CHECK!)' : ''}`;
@@ -1371,7 +1431,7 @@ function requestHint() {
     const hintThinkDiv = document.createElement('div');
     hintThinkDiv.className = 'ai-log-entry';
     hintThinkDiv.id = 'active-hint-think-entry';
-    hintThinkDiv.innerHTML = `<div><span class="spinner"></span> Master AI calculating best hint...</div>`;
+    hintThinkDiv.innerHTML = `<div><span class="spinner"></span> Loki calculating best hint...</div>`;
     aiContainer.appendChild(hintThinkDiv);
     aiContainer.scrollTop = aiContainer.scrollHeight;
 
@@ -1388,7 +1448,7 @@ function showHintMove(moveStr) {
     
     currentHint = { from: [fr, fc], to: [tr, tc] };
     
-    const reasonText = "💡 " + generateMoveReason(moveStr, "Master AI");
+    const reasonText = "💡 " + generateMoveReason(moveStr, "Loki");
     showSpeechBubble(reasonText);
 
     const hintThinkDiv = document.getElementById('active-hint-think-entry');
@@ -1408,10 +1468,21 @@ function rebuildMoveLogUI() {
         const moveNum = Math.floor(i / 2) + 1;
         const whiteMove = moveHistory[i];
         const blackMove = moveHistory[i + 1] ? moveHistory[i + 1] : "";
+        
         logHTML += `<div>${moveNum}. ${whiteMove} ${blackMove}</div>`;
+
+        // Check if White move triggered an opening
+        if (openingHistoryMap[i]) {
+            logHTML += `<div class="opening-log-entry">${openingHistoryMap[i].replace(/\n/g, '<br>')}</div>`;
+        }
+        // Check if Black move triggered an opening
+        if (i + 1 < moveHistory.length && openingHistoryMap[i + 1]) {
+            logHTML += `<div class="opening-log-entry">${openingHistoryMap[i + 1].replace(/\n/g, '<br>')}</div>`;
+        }
     }
     const logContent = document.getElementById('move-log-content');
     logContent.innerHTML = logHTML || "Game started.";
+    logContent.scrollTop = logContent.scrollHeight;
 }
 
 function updateScoreDisplay() {
@@ -1831,6 +1902,9 @@ function executeMove(from, move, promoPiece = 'Q') {
     updateMoveLog(moveNotation);
     updateScoreDisplay();
 
+    // Check for known openings/traps and display speech bubble + save to move log & Loki's thoughts
+    checkAndAnnounceOpening();
+
     turn = turn === 'w' ? 'b' : 'w';
 
     const hasLegalMoves = playerHasLegalMoves(turn);
@@ -1857,10 +1931,10 @@ function executeMove(from, move, promoPiece = 'Q') {
             triggerGameOver(false, "Game ended in a Stalemate!");
         }
     } else {
-        infoEl.textContent = `Turn: ${turn === 'w' ? 'White' : 'Black'}${inCheck ? ' (CHECK!)' : ''}${isDrunkAI ? ' (AI is drunk 🍹)' : ''}`;
+        infoEl.textContent = `Turn: ${turn === 'w' ? 'White' : 'Black'}${inCheck ? ' (CHECK!)' : ''}${isDrunkAI ? ' (Loki is drunk 🍹)' : ''}`;
         
         if (isAutoplayActive) {
-            // In Autoplay, White uses Master AI (true), Black uses Opponent's Difficulty (false)
+            // In Autoplay, White uses GM Loki (true), Black uses Opponent's Difficulty (false)
             setTimeout(() => triggerAIMove(turn === 'w'), 600);
         } else {
             const isAI = document.getElementById('mode').value === 'ai';
@@ -1923,21 +1997,20 @@ function triggerAIMove(forceMaster = false) {
 
         if (forceMaster) {
             depth = 18; movetime = 2500; skillLevel = 20;
-            lastExecutingAIType = "Master AI";
+            lastExecutingAIType = "GM Loki";
         } else if (isDrunkAI) {
             depth = 1; movetime = 200; skillLevel = 0;
             isDrunkAI = false;
-            lastExecutingAIType = "Drunk AI 🍹";
+            lastExecutingAIType = "Drunk Loki 🍹";
         } else {
             const diff = document.getElementById('difficulty').value;
             lastExecutingAIType = getActiveDifficultyName();
 
             if (diff === 'toddler') { depth = 1; movetime = 100; skillLevel = 0; }
-            else if (diff === 'beginner') { depth = 1; movetime = 150; skillLevel = 3; }
-            else if (diff === 'easy') { depth = 3; movetime = 400; skillLevel = 7; }
-            else if (diff === 'medium') { depth = 8; movetime = 1000; skillLevel = 20; }
-            else if (diff === 'hard') { depth = 12; movetime = 2000; skillLevel = 20; }
-            else if (diff === 'master') { depth = 18; movetime = 3000; skillLevel = 20; }
+            else if (diff === 'puppy') { depth = 1; movetime = 150; skillLevel = 3; }
+            else if (diff === 'loki') { depth = 3; movetime = 400; skillLevel = 7; }
+            else if (diff === 'senior') { depth = 12; movetime = 1500; skillLevel = 20; }
+            else if (diff === 'gm') { depth = 18; movetime = 3000; skillLevel = 20; }
         }
 
         isAIThinking = true;
