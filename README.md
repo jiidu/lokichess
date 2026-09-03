@@ -1,6 +1,6 @@
 # LokiChess
 LokiChess - an open source chess game with a few twists.
-
+https://lokichess.com
 ## Features
 
 - Play chess in your browser
