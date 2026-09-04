@@ -359,6 +359,12 @@
         .icon-btn:hover { background: #45423e; }
         .icon-btn.active-autoplay { background: #e74c3c !important; border-color: #ff6b6b; }
         
+        /* Subtle Hover-like Active State for Open Settings Gear Button */
+        .icon-btn.active-btn {
+            background: #45423e !important;
+            border-color: #66635f !important;
+        }
+        
         /* Active Loading Hint Button Styling (Grey Background + White Spinner) */
         .icon-btn.active-hint {
             background: #45423e !important;
@@ -504,7 +510,7 @@
 <div class="header">
     <h1>LokiChess</h1>
     <img src="chess_images/logo1.png" alt="LokiChess Logo" class="header-logo" onerror="this.style.display='none'">
-    <span class="version">v0.8.7</span>
+    <span class="version">v0.8.8</span>
 </div>
 
 <div id="info-box">
@@ -528,7 +534,7 @@
 
     <div id="board-container">
         <!-- Speech Bubble Overlay -->
-        <div id="speech-bubble">💭 Loki Suggestion</div>
+        <div id="speech-bubble">Loki Suggestion</div>
 
         <canvas id="confetti-canvas"></canvas>
         <div id="board" class="texture-flat">
@@ -597,7 +603,7 @@
             <button class="icon-btn" id="toggle-ui-btn" onclick="toggleAllUIControls()" title="Hide/Show Menus">🔽</button>
 
             <div class="right-top-bar" id="controls-bar">
-                <button class="icon-btn" onclick="toggleSettings()" title="Settings">⚙️</button>
+                <button class="icon-btn" id="settings-btn" onclick="toggleSettings()" title="Settings">⚙️</button>
                 <button class="icon-btn" onclick="requestReset()" title="New Game">🔄</button>
                 <button class="icon-btn" onclick="undoMove()" title="Undo Move">↩️</button>
                 <button class="icon-btn" id="hint-btn" onclick="requestHint()" title="Get Hint">💡</button>
@@ -1037,6 +1043,9 @@ function showSpeechBubble(text) {
 function checkAndAnnounceOpening() {
     if (typeof CHESS_OPENINGS === 'undefined') return;
 
+    // Rajoitetaan avausten tunnistaminen vain pelin alkuun (enintään 16 siirtoa / 8 siirtoparia)
+    if (moveHistory.length > 16) return;
+
     const pgnString = moveHistory.join(' ');
     let detectedOpening = null;
     let maxMatchLen = 0;
@@ -1051,8 +1060,11 @@ function checkAndAnnounceOpening() {
     if (detectedOpening && detectedOpening !== lastAnnouncedOpening) {
         lastAnnouncedOpening = detectedOpening;
 
+        // Clean emojis from opening name for Loki speech bubble
+        const cleanOpeningText = detectedOpening.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
+
         // 1. Näytetään puhekupla
-        showSpeechBubble(detectedOpening);
+        showSpeechBubble(cleanOpeningText);
 
         // 2. Tallennetaan Move Logiin
         openingHistoryMap[moveHistory.length - 1] = detectedOpening;
@@ -1080,6 +1092,7 @@ function toggleAllUIControls() {
         controlsBar.style.display = 'none';
         document.getElementById('extra-panel').classList.remove('open');
         document.getElementById('settings-panel').classList.remove('open');
+        document.getElementById('settings-btn').classList.remove('active-btn');
         toggleBtn.textContent = '🔽';
     } else {
         controlsBar.style.display = 'flex';
@@ -1115,11 +1128,20 @@ function updateMusicVol() { document.getElementById('bg-music').volume = documen
 
 function toggleSettings() {
     document.getElementById('extra-panel').classList.remove('open');
-    document.getElementById('settings-panel').classList.toggle('open');
+    const settingsPanel = document.getElementById('settings-panel');
+    const settingsBtn = document.getElementById('settings-btn');
+    
+    settingsPanel.classList.toggle('open');
+    if (settingsPanel.classList.contains('open')) {
+        settingsBtn.classList.add('active-btn');
+    } else {
+        settingsBtn.classList.remove('active-btn');
+    }
 }
 
 function toggleExtraMenu() {
     document.getElementById('settings-panel').classList.remove('open');
+    document.getElementById('settings-btn').classList.remove('active-btn');
     document.getElementById('extra-panel').classList.toggle('open');
 }
 
@@ -1314,7 +1336,7 @@ function initStockfish() {
                         // Display speech bubble ONLY for Player's Turn in Autoplay
                         if (isAutoplayActive && turn === 'w') {
                             const reason = generateMoveReason(moveStr, "Loki");
-                            showSpeechBubble("💡 " + reason);
+                            showSpeechBubble(reason);
                         }
 
                         appendAIFinalMove(moveStr);
@@ -1334,8 +1356,8 @@ function resetGame() {
     isDrunkAI = false;
     lastAnnouncedOpening = "";
     openingHistoryMap = {};
+    document.getElementById('settings-btn').classList.remove('active-btn');
     document.getElementById('gameover-modal').style.display = 'none';
-    document.getElementById('speech-bubble').style.display = 'none';
     
     const hintBtn = document.getElementById('hint-btn');
     if (hintBtn) {
@@ -1374,6 +1396,16 @@ function resetGame() {
     document.getElementById('move-log-content').textContent = "Game started.";
     updateScoreDisplay();
     drawBoard();
+
+    // Random greeting from Loki on game start without emojis
+    const greetings = [
+        "Woof! Ready for a game?",
+        "Arf! Let's play some chess!",
+        "Woof! Show me your best moves!",
+        "Arf arf! Good luck, human!"
+    ];
+    const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+    showSpeechBubble(randomGreeting);
 }
 
 function saveGameState() {
@@ -1448,7 +1480,7 @@ function showHintMove(moveStr) {
     
     currentHint = { from: [fr, fc], to: [tr, tc] };
     
-    const reasonText = "💡 " + generateMoveReason(moveStr, "Loki");
+    const reasonText = generateMoveReason(moveStr, "Loki");
     showSpeechBubble(reasonText);
 
     const hintThinkDiv = document.getElementById('active-hint-think-entry');
@@ -1759,7 +1791,7 @@ function handleSquareClick(r, c) {
                 const p = document.createElement('div');
                 p.className = 'ai-log-entry';
                 p.style.color = '#e74c3c';
-                p.textContent = `🔫 BANG! ${piece} at ${toAlgebraic(r, c)} was eliminated!`;
+                p.textContent = `BANG! ${piece} at ${toAlgebraic(r, c)} was eliminated!`;
                 aiContainer.appendChild(p);
                 aiContainer.scrollTop = aiContainer.scrollHeight;
 
@@ -1948,7 +1980,7 @@ function triggerGameOver(isVictory, msg) {
     if (isVictory) playSound('victory');
     else playSound('defeat');
 
-    document.getElementById('gameover-title').textContent = isVictory ? "🎉 Victory! 🎉" : "Game Over";
+    document.getElementById('gameover-title').textContent = isVictory ? "Victory!" : "Game Over";
     document.getElementById('gameover-msg').textContent = msg;
     document.getElementById('gameover-modal').style.display = 'flex';
     if (isVictory) launchConfetti();
