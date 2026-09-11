@@ -213,6 +213,61 @@
             font-family: system-ui, -apple-system, sans-serif; font-size: 0.8rem;
         }
 
+        /* Chess Clocks UI (Hillitty & elegantti muotoilu) */
+        .middle-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .chess-clock {
+            width: 492px;
+            background: var(--panel-bg);
+            border: 1px solid #45423e;
+            border-radius: 6px;
+            padding: 6px 14px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #888;
+            transition: all 0.25s ease;
+        }
+        .clock-time {
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .chess-clock.active {
+            color: #f0d9b5;
+            border-color: #f0d9b5;
+            background: rgba(240, 217, 181, 0.05);
+            box-shadow: 0 0 10px rgba(240, 217, 181, 0.15);
+        }
+        body.theme-cyber .chess-clock.active {
+            color: #ff007f;
+            border-color: #ff007f;
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.2);
+        }
+        body.theme-glass .chess-clock.active {
+            color: #00f2fe;
+            border-color: rgba(0, 242, 254, 0.5);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+        }
+        .chess-clock.low-time {
+            color: #e74c3c !important;
+            border-color: #e74c3c !important;
+            animation: pulseLowTime 1.2s infinite alternate ease-in-out;
+        }
+        @keyframes pulseLowTime {
+            0% { box-shadow: 0 0 2px rgba(231,76,60,0.3); }
+            100% { box-shadow: 0 0 8px rgba(231,76,60,0.6); }
+        }
+
         /* Move Log Special Entry for Openings */
         .opening-log-entry {
             background: rgba(0, 242, 254, 0.1);
@@ -510,7 +565,7 @@
 <div class="header">
     <h1>LokiChess</h1>
     <img src="chess_images/logo1.png" alt="LokiChess Logo" class="header-logo" onerror="this.style.display='none'">
-    <span class="version">v0.8.8</span>
+    <span class="version">v0.8.9</span>
 </div>
 
 <div id="info-box">
@@ -532,69 +587,83 @@
         </div>
     </div>
 
-    <div id="board-container">
-        <!-- Speech Bubble Overlay -->
-        <div id="speech-bubble">Loki Suggestion</div>
+    <div class="middle-column">
+        <!-- Black / AI Clock -->
+        <div id="clock-black" class="chess-clock" style="display: none;">
+            <span>Black</span>
+            <span id="time-black" class="clock-time">--:--</span>
+        </div>
 
-        <canvas id="confetti-canvas"></canvas>
-        <div id="board" class="texture-flat">
-            <div id="promotion-modal">
-                <div class="promo-btn" id="promo-Q" onclick="selectPromotion('Q')"></div>
-                <div class="promo-btn" id="promo-R" onclick="selectPromotion('R')"></div>
-                <div class="promo-btn" id="promo-B" onclick="selectPromotion('B')"></div>
-                <div class="promo-btn" id="promo-N" onclick="selectPromotion('N')"></div>
-            </div>
-            
-            <div id="confirm-modal">
-                <div class="confirm-box">
-                    <p>Are you sure you want to start a new game?</p>
-                    <div class="confirm-btns">
-                        <button class="confirm-btn-yes" onclick="confirmReset(true)">Yes</button>
-                        <button onclick="confirmReset(false)">Cancel</button>
+        <div id="board-container">
+            <!-- Speech Bubble Overlay -->
+            <div id="speech-bubble">Loki Suggestion</div>
+
+            <canvas id="confetti-canvas"></canvas>
+            <div id="board" class="texture-flat">
+                <div id="promotion-modal">
+                    <div class="promo-btn" id="promo-Q" onclick="selectPromotion('Q')"></div>
+                    <div class="promo-btn" id="promo-R" onclick="selectPromotion('R')"></div>
+                    <div class="promo-btn" id="promo-B" onclick="selectPromotion('B')"></div>
+                    <div class="promo-btn" id="promo-N" onclick="selectPromotion('N')"></div>
+                </div>
+                
+                <div id="confirm-modal">
+                    <div class="confirm-box">
+                        <p>Are you sure you want to start a new game?</p>
+                        <div class="confirm-btns">
+                            <button class="confirm-btn-yes" onclick="confirmReset(true)">Yes</button>
+                            <button onclick="confirmReset(false)">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="autoplay-confirm-modal">
+                    <div class="confirm-box">
+                        <p>Are you sure you want to let Loki finish the game automatically?</p>
+                        <div class="confirm-btns">
+                            <button class="confirm-btn-yes" onclick="confirmAutoplay(true)">Yes</button>
+                            <button onclick="confirmAutoplay(false)">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="credits-modal">
+                    <div class="confirm-box">
+                        <p style="font-size: 1.15rem; font-weight: 600; color: #f0d9b5; margin-bottom: 12px; letter-spacing: 0.5px;">Credits</p>
+                        <div class="credits-container">
+                            <div class="credits-row">
+                                <span class="credits-label">Developer:</span> <span class="credits-val">JP Hakoluoto</span><span class="purple-print">(+Gemini)</span>
+                            </div>
+                            <div class="credits-row">
+                                <span class="credits-label">Music:</span> <span class="credits-val">JP Hakoluoto</span><span class="purple-print">(+Suno)</span>
+                            </div>
+                            <div class="credits-row">
+                                <span class="credits-label">GitHub:</span> <a href="https://github.com/jiidu/lokichess" target="_blank" class="credits-link">jiidu/lokichess</a>
+                            </div>
+                            <div class="credits-row">
+                                <span class="credits-label">AI Engine:</span> <a href="https://stockfishchess.org" target="_blank" class="credits-link">Stockfish</a>
+                            </div>
+                        </div>
+                        <div class="confirm-btns" style="margin-top: 16px;">
+                            <button class="confirm-btn-yes" onclick="closeCreditsModal()">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="gameover-modal">
+                    <div class="gameover-box">
+                        <h2 id="gameover-title">Victory!</h2>
+                        <p id="gameover-msg">Checkmate!</p>
+                        <button class="confirm-btn-yes" onclick="closeGameOverModal()">Play Again</button>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div id="autoplay-confirm-modal">
-                <div class="confirm-box">
-                    <p>Are you sure you want to let Loki finish the game automatically?</p>
-                    <div class="confirm-btns">
-                        <button class="confirm-btn-yes" onclick="confirmAutoplay(true)">Yes</button>
-                        <button onclick="confirmAutoplay(false)">Cancel</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="credits-modal">
-                <div class="confirm-box">
-                    <p style="font-size: 1.15rem; font-weight: 600; color: #f0d9b5; margin-bottom: 12px; letter-spacing: 0.5px;">Credits</p>
-                    <div class="credits-container">
-                        <div class="credits-row">
-                            <span class="credits-label">Developer:</span> <span class="credits-val">JP Hakoluoto</span><span class="purple-print">(+Gemini)</span>
-                        </div>
-                        <div class="credits-row">
-                            <span class="credits-label">Music:</span> <span class="credits-val">JP Hakoluoto</span><span class="purple-print">(+Suno)</span>
-                        </div>
-                        <div class="credits-row">
-                            <span class="credits-label">GitHub:</span> <a href="https://github.com/jiidu/lokichess" target="_blank" class="credits-link">jiidu/lokichess</a>
-                        </div>
-                        <div class="credits-row">
-                            <span class="credits-label">AI Engine:</span> <a href="https://stockfishchess.org" target="_blank" class="credits-link">Stockfish</a>
-                        </div>
-                    </div>
-                    <div class="confirm-btns" style="margin-top: 16px;">
-                        <button class="confirm-btn-yes" onclick="closeCreditsModal()">Close</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="gameover-modal">
-                <div class="gameover-box">
-                    <h2 id="gameover-title">Victory!</h2>
-                    <p id="gameover-msg">Checkmate!</p>
-                    <button class="confirm-btn-yes" onclick="closeGameOverModal()">Play Again</button>
-                </div>
-            </div>
+        <!-- White / Player Clock -->
+        <div id="clock-white" class="chess-clock" style="display: none;">
+            <span>White</span>
+            <span id="time-white" class="clock-time">--:--</span>
         </div>
     </div>
 
@@ -625,6 +694,17 @@
                 <select id="mode" onchange="onSettingChange(); requestReset();">
                     <option value="ai">Player vs Loki</option>
                     <option value="pvp">Player vs Player</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <label for="time-control">Time Control: </label>
+                <select id="time-control" onchange="onSettingChange(); requestReset();">
+                    <option value="none" selected>No Clock (Off)</option>
+                    <option value="60|0">1 min (Bullet)</option>
+                    <option value="180|2">3 min | 2 sec (Fischer Blitz)</option>
+                    <option value="300|0">5 min (Blitz)</option>
+                    <option value="600|0">10 min (Rapid)</option>
+                    <option value="900|10">15 min | 10 sec (Fischer Rapid)</option>
                 </select>
             </div>
             <div class="setting-item">
@@ -739,6 +819,13 @@ let speechBubbleTimer = null;
 let lastExecutingAIType = "Loki";
 let lastAnnouncedOpening = "";
 
+// Clock Variables
+let clockInterval = null;
+let whiteTime = 0, blackTime = 0;
+let clockIncrement = 0;
+let isClockActive = false;
+let hasFirstMoveBeenMade = false;
+
 // Track openings per move index so they stay persistent in Move Log
 let openingHistoryMap = {};
 
@@ -761,6 +848,7 @@ function startMusicFirstTime() {
 function saveSettings() {
     const settings = {
         mode: document.getElementById('mode').value,
+        timeControl: document.getElementById('time-control').value,
         difficulty: document.getElementById('difficulty').value,
         theme: document.getElementById('theme').value,
         texture: document.getElementById('texture').value,
@@ -781,6 +869,7 @@ function loadSettings() {
     try {
         const s = JSON.parse(saved);
         if (s.mode !== undefined) document.getElementById('mode').value = s.mode;
+        if (s.timeControl !== undefined) document.getElementById('time-control').value = s.timeControl;
         if (s.difficulty !== undefined) document.getElementById('difficulty').value = s.difficulty;
         if (s.theme !== undefined) {
             document.getElementById('theme').value = s.theme;
@@ -828,6 +917,101 @@ function onDifficultyChange() {
         else if (diff === 'loki') skillLevel = 7;
         else if (diff === 'senior') skillLevel = 12;
         stockfish.postMessage("setoption name Skill Level value " + skillLevel);
+    }
+}
+
+/* Chess Clock Logic */
+function initClocks() {
+    clearInterval(clockInterval);
+    hasFirstMoveBeenMade = false;
+    const tc = document.getElementById('time-control').value;
+    const clockW = document.getElementById('clock-white');
+    const clockB = document.getElementById('clock-black');
+
+    if (tc === 'none') {
+        clockW.style.display = 'none';
+        clockB.style.display = 'none';
+        isClockActive = false;
+        return;
+    }
+
+    const [secs, inc] = tc.split('|').map(Number);
+    whiteTime = secs;
+    blackTime = secs;
+    clockIncrement = inc;
+    isClockActive = true;
+
+    clockW.style.display = 'flex';
+    clockB.style.display = 'flex';
+
+    updateClockUI();
+    startClockTimer();
+}
+
+function startClockTimer() {
+    clearInterval(clockInterval);
+    clockInterval = setInterval(() => {
+        if (!isClockActive || !hasFirstMoveBeenMade) return;
+
+        if (turn === 'w') {
+            whiteTime--;
+            if (whiteTime <= 0) {
+                whiteTime = 0;
+                updateClockUI();
+                handleTimeout('w');
+                return;
+            }
+        } else {
+            blackTime--;
+            if (blackTime <= 0) {
+                blackTime = 0;
+                updateClockUI();
+                handleTimeout('b');
+                return;
+            }
+        }
+        updateClockUI();
+    }, 1000);
+}
+
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+function updateClockUI() {
+    if (!isClockActive) return;
+
+    const elW = document.getElementById('time-white');
+    const elB = document.getElementById('time-black');
+    const clockW = document.getElementById('clock-white');
+    const clockB = document.getElementById('clock-black');
+
+    elW.textContent = formatTime(whiteTime);
+    elB.textContent = formatTime(blackTime);
+
+    clockW.classList.toggle('active', turn === 'w' && hasFirstMoveBeenMade);
+    clockB.classList.toggle('active', turn === 'b' && hasFirstMoveBeenMade);
+
+    clockW.classList.toggle('low-time', whiteTime <= 20);
+    clockB.classList.toggle('low-time', blackTime <= 20);
+}
+
+function handleTimeout(losingColor) {
+    clearInterval(clockInterval);
+    isClockActive = false;
+
+    const winningColor = losingColor === 'w' ? 'Black' : 'White';
+    const isAI = document.getElementById('mode').value === 'ai';
+
+    document.getElementById('info').textContent = `Game Over! ${winningColor} won on time!`;
+
+    if (isAI) {
+        if (losingColor === 'b') triggerGameOver(true, "Timeout! You won on time!");
+        else triggerGameOver(false, "Timeout! Loki won on time!");
+    } else {
+        triggerGameOver(true, `${winningColor} won on time!`);
     }
 }
 
@@ -1008,7 +1192,10 @@ function playRandomTrack() {
         'chess_music/music2.mp3', 
         'chess_music/music3.mp3', 
         'chess_music/music4.mp3', 
-        'chess_music/music5.mp3'
+        'chess_music/music5.mp3',
+		'chess_music/music6.mp3',
+		'chess_music/music7.mp3',
+		'chess_music/music8.mp3'
     ];
     
     let availableTracks = tracks.filter(t => t !== lastPlayedTrack);
@@ -1394,6 +1581,8 @@ function resetGame() {
     document.getElementById('info').textContent = "Turn: White";
     document.getElementById('ai-log-content').innerHTML = "<div class='ai-log-entry'>Game started.</div>";
     document.getElementById('move-log-content').textContent = "Game started.";
+    
+    initClocks();
     updateScoreDisplay();
     drawBoard();
 
@@ -1415,7 +1604,10 @@ function saveGameState() {
         castlingRights: { ...castlingRights },
         enPassantTarget: enPassantTarget ? [...enPassantTarget] : null,
         moveHistory: [...moveHistory],
-        openingHistoryMap: JSON.parse(JSON.stringify(openingHistoryMap))
+        openingHistoryMap: JSON.parse(JSON.stringify(openingHistoryMap)),
+        whiteTime: whiteTime,
+        blackTime: blackTime,
+        hasFirstMoveBeenMade: hasFirstMoveBeenMade
     });
 }
 
@@ -1441,10 +1633,14 @@ function undoMove() {
         enPassantTarget = stateToRestore.enPassantTarget;
         moveHistory = stateToRestore.moveHistory;
         openingHistoryMap = stateToRestore.openingHistoryMap || {};
+        whiteTime = stateToRestore.whiteTime !== undefined ? stateToRestore.whiteTime : whiteTime;
+        blackTime = stateToRestore.blackTime !== undefined ? stateToRestore.blackTime : blackTime;
+        hasFirstMoveBeenMade = stateToRestore.hasFirstMoveBeenMade !== undefined ? stateToRestore.hasFirstMoveBeenMade : hasFirstMoveBeenMade;
 
         const inCheck = isKingInCheck(turn, boardState);
         document.getElementById('info').textContent = `Turn: ${turn === 'w' ? 'White' : 'Black'}${inCheck ? ' (CHECK!)' : ''}`;
         
+        updateClockUI();
         rebuildMoveLogUI();
         updateScoreDisplay();
         drawBoard();
@@ -1906,6 +2102,11 @@ function executeMove(from, move, promoPiece = 'Q') {
     saveGameState();
     currentHint = null;
 
+    // Käynnistetään kello ensimmäisen siirron kohdalla
+    if (!hasFirstMoveBeenMade) {
+        hasFirstMoveBeenMade = true;
+    }
+
     const [fr, fc] = from;
     const { r: tr, c: tc, type } = move;
     const piece = boardState[fr][fc];
@@ -1934,10 +2135,18 @@ function executeMove(from, move, promoPiece = 'Q') {
     updateMoveLog(moveNotation);
     updateScoreDisplay();
 
+    // Fischer-säännön mukainen lisäaika siirron tekeölle pelaajalle
+    if (isClockActive && clockIncrement > 0) {
+        if (turn === 'w') whiteTime += clockIncrement;
+        else blackTime += clockIncrement;
+        updateClockUI();
+    }
+
     // Check for known openings/traps and display speech bubble + save to move log & Loki's thoughts
     checkAndAnnounceOpening();
 
     turn = turn === 'w' ? 'b' : 'w';
+    updateClockUI();
 
     const hasLegalMoves = playerHasLegalMoves(turn);
     const inCheck = isKingInCheck(turn, boardState);
@@ -1949,6 +2158,8 @@ function executeMove(from, move, promoPiece = 'Q') {
 
     if (!hasLegalMoves) {
         stopAutoplay();
+        clearInterval(clockInterval);
+        isClockActive = false;
         const isAI = document.getElementById('mode').value === 'ai';
         if (inCheck) {
             infoEl.textContent = `Game Over! ${turn === 'w' ? 'Black' : 'White'} won!`;
@@ -1977,6 +2188,9 @@ function executeMove(from, move, promoPiece = 'Q') {
 }
 
 function triggerGameOver(isVictory, msg) {
+    clearInterval(clockInterval);
+    isClockActive = false;
+
     if (isVictory) playSound('victory');
     else playSound('defeat');
 
