@@ -17,8 +17,8 @@
             --particle-color-2: rgba(181, 136, 99, 0.3);
             --board-shadow: 0 12px 32px rgba(0,0,0,0.6);
             --coord-color: rgba(0, 0, 0, 0.45);
-            --coord-white-sq: rgba(181, 136, 99, 0.6);
-            --coord-black-sq: rgba(240, 217, 181, 0.6);
+            --coord-white-sq: rgba(181, 136, 99, 0.7);
+            --coord-black-sq: rgba(240, 217, 181, 0.7);
         }
 
         /* Themes */
@@ -606,7 +606,7 @@
 <div class="header">
     <h1>LokiChess</h1>
     <img src="chess_images/logo1.png" alt="LokiChess Logo" class="header-logo" onerror="this.style.display='none'">
-    <span class="version">v0.8.10</span>
+    <span class="version">v0.8.11</span>
 </div>
 
 <div id="info-box">
@@ -1673,7 +1673,6 @@ function undoMove() {
         const inCheck = isKingInCheck(turn, boardState);
         document.getElementById('info').textContent = `Turn: ${turn === 'w' ? 'White' : 'Black'}${inCheck ? ' (CHECK!)' : ''}`;
         
-        // Aktivoi kello uudelleen, jos peli oli päättynyt (esim. timeout/stalemate/checkmate)
         const tc = document.getElementById('time-control').value;
         if (tc !== 'none') {
             isClockActive = true;
@@ -2170,7 +2169,16 @@ function executeMove(from, move, promoPiece = 'Q') {
 
     if (piece[1] === 'P' && (tr === 0 || tr === 7)) boardState[tr][tc] = turn + promoPiece;
 
-    const moveNotation = (piece[1] === 'P' ? '' : piece[1]) + (isCapture ? 'x' : '') + toAlgebraic(tr, tc);
+    // Muodostetaan siirtonotaatio (korjattu linnoittuminen: O-O / O-O-O)
+    let moveNotation = "";
+    if (type === 'castleK') {
+        moveNotation = "O-O";
+    } else if (type === 'castleQ') {
+        moveNotation = "O-O-O";
+    } else {
+        moveNotation = (piece[1] === 'P' ? '' : piece[1]) + (isCapture ? 'x' : '') + toAlgebraic(tr, tc);
+    }
+
     updateMoveLog(moveNotation);
     updateScoreDisplay();
 
