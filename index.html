@@ -407,6 +407,7 @@
             cursor: grab; z-index: 2; width: 60px; height: 60px; position: absolute;
             transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
             top: 0; left: 0; background-size: 90%; background-repeat: no-repeat; background-position: center;
+            touch-action: none;
         }
         .piece.dragging { cursor: grabbing; z-index: 1000 !important; transition: none !important; pointer-events: none; }
         
@@ -606,7 +607,7 @@
 <div class="header">
     <h1>LokiChess</h1>
     <img src="chess_images/logo1.png" alt="LokiChess Logo" class="header-logo" onerror="this.style.display='none'">
-    <span class="version">v0.8.11</span>
+    <span class="version">v0.8.12</span>
 </div>
 
 <div id="info-box">
@@ -1880,11 +1881,11 @@ function startDrag(e) {
 
     if (isSwitcharooActive) {
         if (!boardState[r][c]) return;
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
         draggedPiece = this;
         dragStartPos = { r, c };
         draggedPiece.classList.add('dragging');
-        moveAt(e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY);
+        moveAt(e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0), e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0));
 
         document.addEventListener('mousemove', onDrag);
         document.addEventListener('touchmove', onDrag, {passive: false});
@@ -1899,7 +1900,9 @@ function startDrag(e) {
     const piece = boardState[r][c];
     if (!piece || piece[0] !== turn) return;
 
-    e.preventDefault();
+    // Estetään selaimen skrollaus/oletustoiminto heti kosketushetkellä mobiililla
+    if (e.cancelable) e.preventDefault();
+
     draggedPiece = this;
     dragStartPos = { r, c };
 
@@ -1910,7 +1913,11 @@ function startDrag(e) {
     draggedPiece = document.querySelector(`.piece[data-r="${r}"][data-c="${c}"]`);
     if (draggedPiece) {
         draggedPiece.classList.add('dragging');
-        moveAt(e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY);
+
+        const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+        const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+
+        moveAt(clientX, clientY);
 
         document.addEventListener('mousemove', onDrag);
         document.addEventListener('touchmove', onDrag, {passive: false});
@@ -1927,8 +1934,8 @@ function endDragSwitcharoo(e) {
 
     if (!draggedPiece) return;
 
-    const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
-    const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
+    const clientX = e.clientX || (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : 0);
+    const clientY = e.clientY || (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : 0);
 
     const boardRect = document.getElementById('board').getBoundingClientRect();
     const tc = Math.floor((clientX - boardRect.left) / 60);
@@ -1958,8 +1965,10 @@ function moveAt(pageX, pageY) {
 }
 
 function onDrag(e) {
-    if (e.preventDefault) e.preventDefault();
-    moveAt(e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY);
+    if (e.preventDefault && e.cancelable) e.preventDefault();
+    const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+    moveAt(clientX, clientY);
 }
 
 function endDrag(e) {
@@ -1970,8 +1979,8 @@ function endDrag(e) {
 
     if (!draggedPiece) return;
 
-    const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
-    const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
+    const clientX = e.clientX || (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : 0);
+    const clientY = e.clientY || (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : 0);
 
     const boardRect = document.getElementById('board').getBoundingClientRect();
     const tc = Math.floor((clientX - boardRect.left) / 60);
@@ -2169,7 +2178,6 @@ function executeMove(from, move, promoPiece = 'Q') {
 
     if (piece[1] === 'P' && (tr === 0 || tr === 7)) boardState[tr][tc] = turn + promoPiece;
 
-    // Muodostetaan siirtonotaatio (korjattu linnoittuminen: O-O / O-O-O)
     let moveNotation = "";
     if (type === 'castleK') {
         moveNotation = "O-O";
