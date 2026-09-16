@@ -16,29 +16,37 @@
             --particle-color-1: rgba(240, 217, 181, 0.4);
             --particle-color-2: rgba(181, 136, 99, 0.3);
             --board-shadow: 0 12px 32px rgba(0,0,0,0.6);
+            --coord-color: rgba(0, 0, 0, 0.45);
+            --coord-white-sq: rgba(181, 136, 99, 0.6);
+            --coord-black-sq: rgba(240, 217, 181, 0.6);
         }
 
         /* Themes */
         body.theme-classic { 
             --sq-white: #f0d9b5; --sq-black: #b58863; --board-border: #403d39; 
             --particle-color-1: rgba(240, 217, 181, 0.4); --particle-color-2: rgba(181, 136, 99, 0.3);
+            --coord-white-sq: rgba(181, 136, 99, 0.7); --coord-black-sq: rgba(240, 217, 181, 0.7);
         }
         body.theme-blue { 
             --sq-white: #dee3e6; --sq-black: #8ca2ad; --board-border: #354652; 
             --particle-color-1: rgba(0, 242, 254, 0.3); --particle-color-2: rgba(140, 162, 173, 0.3);
+            --coord-white-sq: rgba(140, 162, 173, 0.7); --coord-black-sq: rgba(222, 227, 230, 0.7);
         }
         body.theme-emerald { 
             --sq-white: #eadeca; --sq-black: #4b6e40; --board-border: #2d4526; 
             --particle-color-1: rgba(75, 110, 64, 0.4); --particle-color-2: rgba(234, 222, 202, 0.3);
+            --coord-white-sq: rgba(75, 110, 64, 0.7); --coord-black-sq: rgba(234, 222, 202, 0.7);
         }
         body.theme-wood { 
             --sq-white: #d7b57c; --sq-black: #8b5a2b; --board-border: #5c3a17; 
             --particle-color-1: rgba(215, 181, 124, 0.4); --particle-color-2: rgba(139, 90, 43, 0.3);
+            --coord-white-sq: rgba(139, 90, 43, 0.7); --coord-black-sq: rgba(215, 181, 124, 0.7);
         }
         body.theme-cyber { 
             --sq-white: #2d3748; --sq-black: #4a5568; --board-border: #ff007f; 
             --bg-color: #0f0c1b; --panel-bg: #1a162b; --text-color: #ff007f;
             --particle-color-1: rgba(255, 0, 127, 0.5); --particle-color-2: rgba(0, 242, 254, 0.5);
+            --coord-white-sq: rgba(0, 242, 254, 0.6); --coord-black-sq: rgba(255, 0, 127, 0.6);
         }
         /* Frosted Glass Theme */
         body.theme-glass {
@@ -51,6 +59,7 @@
             --particle-color-1: rgba(0, 242, 254, 0.6);
             --particle-color-2: rgba(255, 255, 255, 0.4);
             --board-shadow: 0 16px 40px rgba(0, 242, 254, 0.25);
+            --coord-white-sq: rgba(25, 38, 50, 0.6); --coord-black-sq: rgba(224, 242, 254, 0.6);
         }
 
         /* Board Textures */
@@ -213,7 +222,7 @@
             font-family: system-ui, -apple-system, sans-serif; font-size: 0.8rem;
         }
 
-        /* Chess Clocks UI (Hillitty & elegantti muotoilu) */
+        /* Chess Clocks UI */
         .middle-column {
             display: flex;
             flex-direction: column;
@@ -339,9 +348,13 @@
         
         #board-container {
             position: relative;
-            border: 6px solid var(--board-border); border-radius: 4px;
+            border: 6px solid var(--board-border); 
+            border-radius: 4px;
             box-shadow: var(--board-shadow);
-            transition: border-color 0.3s; width: 480px; height: 480px;
+            transition: border-color 0.3s; 
+            width: 480px; 
+            height: 480px;
+            box-sizing: content-box;
             flex-shrink: 0;
             overflow: visible;
         }
@@ -357,6 +370,36 @@
             display: flex; align-items: center; justify-content: center; 
             position: relative; 
         }
+
+        /* Shakki-koordinaatit ruutujen sisällä (Häilyvä/läpinäkyvä väri) */
+        .square.white-sq[data-c="0"]::before { color: var(--coord-white-sq); }
+        .square.black-sq[data-c="0"]::before { color: var(--coord-black-sq); }
+        .square[data-c="0"]::before {
+            content: attr(data-row-num);
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            line-height: 1;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .square.white-sq[data-r="7"]::after { color: var(--coord-white-sq); }
+        .square.black-sq[data-r="7"]::after { color: var(--coord-black-sq); }
+        .square[data-r="7"]::after {
+            content: attr(data-col-letter);
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            line-height: 1;
+            pointer-events: none;
+            z-index: 1;
+        }
+
         .white-sq { background-color: var(--sq-white); }
         .black-sq { background-color: var(--sq-black); }
         
@@ -376,7 +419,7 @@
 
         /* Soft Pastel Colors for Movement & Hints */
         .selected, .hint-from { 
-            background-color: rgba(255, 224, 178, 0.85) !important; /* Soft Pastel Orange */
+            background-color: rgba(255, 224, 178, 0.85) !important;
             box-shadow: inset 0 0 8px rgba(230, 160, 100, 0.6) !important; 
         }
         body.theme-cyber .selected { background-color: #ff007f !important; }
@@ -389,7 +432,7 @@
 
         /* Soft Pastel Blue Pulse for Hint Destination Square */
         .hint-to { 
-            background-color: rgba(179, 229, 252, 0.85) !important; /* Soft Pastel Blue */
+            background-color: rgba(179, 229, 252, 0.85) !important;
             box-shadow: inset 0 0 8px rgba(120, 190, 230, 0.6);
             animation: pulsePastelBlue 1.2s infinite alternate ease-in-out; 
         }
@@ -414,13 +457,11 @@
         .icon-btn:hover { background: #45423e; }
         .icon-btn.active-autoplay { background: #e74c3c !important; border-color: #ff6b6b; }
         
-        /* Subtle Hover-like Active State for Open Settings Gear Button */
         .icon-btn.active-btn {
             background: #45423e !important;
             border-color: #66635f !important;
         }
         
-        /* Active Loading Hint Button Styling (Grey Background + White Spinner) */
         .icon-btn.active-hint {
             background: #45423e !important;
             border-color: #66635f !important;
@@ -565,7 +606,7 @@
 <div class="header">
     <h1>LokiChess</h1>
     <img src="chess_images/logo1.png" alt="LokiChess Logo" class="header-logo" onerror="this.style.display='none'">
-    <span class="version">v0.8.9</span>
+    <span class="version">v0.8.10</span>
 </div>
 
 <div id="info-box">
@@ -1230,7 +1271,6 @@ function showSpeechBubble(text) {
 function checkAndAnnounceOpening() {
     if (typeof CHESS_OPENINGS === 'undefined') return;
 
-    // Rajoitetaan avausten tunnistaminen vain pelin alkuun (enintään 16 siirtoa / 8 siirtoparia)
     if (moveHistory.length > 16) return;
 
     const pgnString = moveHistory.join(' ');
@@ -1247,17 +1287,13 @@ function checkAndAnnounceOpening() {
     if (detectedOpening && detectedOpening !== lastAnnouncedOpening) {
         lastAnnouncedOpening = detectedOpening;
 
-        // Clean emojis from opening name for Loki speech bubble
         const cleanOpeningText = detectedOpening.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
 
-        // 1. Näytetään puhekupla
         showSpeechBubble(cleanOpeningText);
 
-        // 2. Tallennetaan Move Logiin
         openingHistoryMap[moveHistory.length - 1] = detectedOpening;
         rebuildMoveLogUI();
 
-        // 3. Lisätään tieto myös Loki's Thinking & Analysis -välilehdelle
         const aiContainer = document.getElementById('ai-log-content');
         const entry = document.createElement('div');
         entry.className = 'ai-log-entry';
@@ -1412,7 +1448,6 @@ function confirmAutoplay(shouldStart) {
         isAutoplayActive = true;
         document.getElementById('autoplay-btn').classList.add('active-autoplay');
         document.getElementById('autoplay-btn').textContent = "⏹️";
-        // Autoplay starts with current turn
         triggerAIMove(turn === 'w');
     }
 }
@@ -1520,7 +1555,6 @@ function initStockfish() {
 
                         showHintMove(moveStr);
                     } else {
-                        // Display speech bubble ONLY for Player's Turn in Autoplay
                         if (isAutoplayActive && turn === 'w') {
                             const reason = generateMoveReason(moveStr, "Loki");
                             showSpeechBubble(reason);
@@ -1586,7 +1620,6 @@ function resetGame() {
     updateScoreDisplay();
     drawBoard();
 
-    // Random greeting from Loki on game start without emojis
     const greetings = [
         "Woof! Ready for a game?",
         "Arf! Let's play some chess!",
@@ -1640,6 +1673,13 @@ function undoMove() {
         const inCheck = isKingInCheck(turn, boardState);
         document.getElementById('info').textContent = `Turn: ${turn === 'w' ? 'White' : 'Black'}${inCheck ? ' (CHECK!)' : ''}`;
         
+        // Aktivoi kello uudelleen, jos peli oli päättynyt (esim. timeout/stalemate/checkmate)
+        const tc = document.getElementById('time-control').value;
+        if (tc !== 'none') {
+            isClockActive = true;
+            startClockTimer();
+        }
+
         updateClockUI();
         rebuildMoveLogUI();
         updateScoreDisplay();
@@ -1699,11 +1739,9 @@ function rebuildMoveLogUI() {
         
         logHTML += `<div>${moveNum}. ${whiteMove} ${blackMove}</div>`;
 
-        // Check if White move triggered an opening
         if (openingHistoryMap[i]) {
             logHTML += `<div class="opening-log-entry">${openingHistoryMap[i].replace(/\n/g, '<br>')}</div>`;
         }
-        // Check if Black move triggered an opening
         if (i + 1 < moveHistory.length && openingHistoryMap[i + 1]) {
             logHTML += `<div class="opening-log-entry">${openingHistoryMap[i + 1].replace(/\n/g, '<br>')}</div>`;
         }
@@ -1750,7 +1788,6 @@ function appendAIFinalMove(moveStr) {
     const aiContainer = document.getElementById('ai-log-content');
     const moveNum = Math.floor(moveHistory.length / 2) + 1;
     
-    // Explicitly identify who made the move
     const diffName = lastExecutingAIType;
     const reasonText = generateMoveReason(moveStr, diffName);
 
@@ -1795,11 +1832,15 @@ function drawBoard() {
     boardEl.appendChild(creditsModal);
     boardEl.appendChild(gameoverModal);
 
+    const colLetters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
     for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
             const sq = document.createElement('div');
             sq.className = `square ${(r + c) % 2 === 0 ? 'white-sq' : 'black-sq'}`;
             sq.dataset.r = r; sq.dataset.c = c;
+            sq.dataset.rowNum = 8 - r;
+            sq.dataset.colLetter = colLetters[c];
             
             const piece = boardState[r][c];
             if (piece) {
@@ -1812,7 +1853,6 @@ function drawBoard() {
                 sq.appendChild(pEl);
             }
 
-            // Highlighting hint square: keep soft orange for origin, soft pastel blue for destination
             const isHintFrom = currentHint && currentHint.from[0] === r && currentHint.from[1] === c;
             const isHintTo = currentHint && currentHint.to[0] === r && currentHint.to[1] === c;
 
@@ -2102,7 +2142,6 @@ function executeMove(from, move, promoPiece = 'Q') {
     saveGameState();
     currentHint = null;
 
-    // Käynnistetään kello ensimmäisen siirron kohdalla
     if (!hasFirstMoveBeenMade) {
         hasFirstMoveBeenMade = true;
     }
@@ -2135,14 +2174,12 @@ function executeMove(from, move, promoPiece = 'Q') {
     updateMoveLog(moveNotation);
     updateScoreDisplay();
 
-    // Fischer-säännön mukainen lisäaika siirron tekeölle pelaajalle
     if (isClockActive && clockIncrement > 0) {
         if (turn === 'w') whiteTime += clockIncrement;
         else blackTime += clockIncrement;
         updateClockUI();
     }
 
-    // Check for known openings/traps and display speech bubble + save to move log & Loki's thoughts
     checkAndAnnounceOpening();
 
     turn = turn === 'w' ? 'b' : 'w';
@@ -2177,7 +2214,6 @@ function executeMove(from, move, promoPiece = 'Q') {
         infoEl.textContent = `Turn: ${turn === 'w' ? 'White' : 'Black'}${inCheck ? ' (CHECK!)' : ''}${isDrunkAI ? ' (Loki is drunk 🍹)' : ''}`;
         
         if (isAutoplayActive) {
-            // In Autoplay, White uses GM Loki (true), Black uses Opponent's Difficulty (false)
             setTimeout(() => triggerAIMove(turn === 'w'), 600);
         } else {
             const isAI = document.getElementById('mode').value === 'ai';
@@ -2261,7 +2297,6 @@ function triggerAIMove(forceMaster = false) {
 
         isAIThinking = true;
 
-        // Append a new entry for active thinking
         const aiContainer = document.getElementById('ai-log-content');
         activeThinkingElement = document.createElement('div');
         activeThinkingElement.className = 'ai-log-entry';
