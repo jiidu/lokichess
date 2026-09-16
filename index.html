@@ -1900,7 +1900,7 @@ function startDrag(e) {
     const piece = boardState[r][c];
     if (!piece || piece[0] !== turn) return;
 
-    // Estetään selaimen skrollaus/oletustoiminto heti kosketushetkellä mobiililla
+    // Estetään selaimen skrollaus heti kosketushetkellä mobiililla
     if (e.cancelable) e.preventDefault();
 
     draggedPiece = this;
@@ -1908,22 +1908,26 @@ function startDrag(e) {
 
     selectedPos = [r, c];
     validMoves = getLegalMoves(r, c, boardState, castlingRights, enPassantTarget);
-    drawBoard();
 
-    draggedPiece = document.querySelector(`.piece[data-r="${r}"][data-c="${c}"]`);
-    if (draggedPiece) {
-        draggedPiece.classList.add('dragging');
+    // Päivitetään korostukset poistamatta/luomatta DOM-elementtejä kesken kosketuksen (iOS WebKit -yhteensopivuus)
+    document.querySelectorAll('.square').forEach(sq => {
+        const sqR = parseInt(sq.dataset.r);
+        const sqC = parseInt(sq.dataset.c);
+        sq.classList.toggle('selected', selectedPos && selectedPos[0] === sqR && selectedPos[1] === sqC);
+        sq.classList.toggle('valid-move', validMoves.some(m => m.r === sqR && m.c === sqC));
+    });
 
-        const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-        const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+    draggedPiece.classList.add('dragging');
 
-        moveAt(clientX, clientY);
+    const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
 
-        document.addEventListener('mousemove', onDrag);
-        document.addEventListener('touchmove', onDrag, {passive: false});
-        document.addEventListener('mouseup', endDrag);
-        document.addEventListener('touchend', endDrag);
-    }
+    moveAt(clientX, clientY);
+
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('touchmove', onDrag, {passive: false});
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('touchend', endDrag);
 }
 
 function endDragSwitcharoo(e) {
